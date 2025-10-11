@@ -50,6 +50,7 @@ export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, 
 
   // Get the base location path, excluding any container/sub-container names
   const locationDisplayPath = () => {
+      if (!item.locationPath) return '';
       const path = [...item.locationPath];
       if (item.subContainer) {
           path.pop(); // remove sub-container
@@ -84,10 +85,7 @@ export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, 
         isReadOnly={false}
         onItemSave={onItemSave}
         locations={locations}
-      >
-        {/* The Card is outside the Dialog trigger, but this setup makes the dialog open */}
-        {/* when the edit button is clicked. We pass an empty trigger. */}
-      </AddItemDialog>
+      />
 
       <Card 
         onClick={handleCardClick}

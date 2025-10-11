@@ -35,7 +35,7 @@ export function AddItemDialog({
     open: controlledOpen,
     onOpenChange: setControlledOpen,
     isReadOnly = false,
-    onItemSave, // This prop is now crucial
+    onItemSave,
     locations,
 }: { 
     children?: React.ReactNode, 
@@ -44,8 +44,8 @@ export function AddItemDialog({
     open?: boolean,
     onOpenChange?: (open: boolean) => void,
     isReadOnly?: boolean,
-    onItemSave: (item: Item) => void, // Changed to be required
-    locations?: Location[],
+    onItemSave: (item: Item) => void,
+    locations: Location[],
 }) {
     const [internalOpen, setInternalOpen] = useState(false);
     
@@ -87,7 +87,8 @@ export function AddItemDialog({
         return { flattenedLocations: flatList, locationMap: map };
     }, [locations]);
 
-    const buildFullPath = (locId: string) => {
+    const buildFullPath = (locId: string | null) => {
+        if (!locId) return [];
         const path: string[] = [];
         let currentId: string | null = locId;
         while(currentId && locationMap.has(currentId)) {
@@ -213,7 +214,7 @@ export function AddItemDialog({
             id: generateRandomId(),
             propertyId: parentContainer?.propertyId || (locations && locations.length > 0 ? locations[0].propertyId : 'prop-1'), // Improved fallback
             parentId: parentContainer?.id ?? null,
-            imageUrl: 'https://picsum.photos/seed/newItem/400/300',
+            imageUrl: `https://picsum.photos/seed/${generateRandomId('img')}/400/300`,
             imageHint: 'new item',
         };
 
@@ -231,11 +232,7 @@ export function AddItemDialog({
             subContainer: parentContainer ? subContainer : null,
         };
 
-        if (onItemSave) {
-            onItemSave(finalItem);
-        } else {
-             console.error("onItemSave prop is missing!");
-        }
+        onItemSave(finalItem);
 
         toast({
             title: isEditMode ? "Item Atualizado!" : "Item Adicionado!",

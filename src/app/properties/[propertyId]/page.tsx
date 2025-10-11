@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { use, useMemo, useState } from 'react';
+import React, { useMemo, useState, use } from 'react';
 import { MOCK_ITEMS, MOCK_LOCATIONS, MOCK_PROPERTIES, buildLocationTree } from '@/lib/data';
 import { AppLayout } from '@/components/layout/app-layout';
 import { ItemBrowser } from '@/components/inventory/item-browser';
@@ -46,7 +46,7 @@ export default function PropertyPage({ params }: { params: { propertyId: string 
         return prevLocations.map(loc => {
           if (loc.id === locationToSave.id) {
             // Important: do not overwrite children array
-            return { ...loc, ...locationToSave, children: loc.children };
+            return { ...loc, ...locationToSave, children: loc.children || [] };
           }
           return loc;
         });
