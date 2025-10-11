@@ -1,17 +1,18 @@
 
+
 'use client';
 
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import type { Item } from '@/lib/types';
+import type { Item, Location } from '@/lib/types';
 import { MapPin, Pencil, PackageOpen, Eye, DoorOpen, Rows3 } from 'lucide-react';
 import { AddItemDialog } from './add-item-dialog';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
-export function ItemCard({ item, onContainerClick, parentContainer, onItemSave }: { item: Item, onContainerClick: (itemId: string) => void, parentContainer?: Item | null, onItemSave?: (item: Item) => void }) {
+export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, locations }: { item: Item, onContainerClick: (itemId: string) => void, parentContainer?: Item | null, onItemSave?: (item: Item) => void, locations: Location[] }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
@@ -54,6 +55,7 @@ export function ItemCard({ item, onContainerClick, parentContainer, onItemSave }
         onOpenChange={setIsViewDialogOpen}
         isReadOnly={true}
         onItemSave={onItemSave}
+        locations={locations}
       />
       
       {/* Edit Dialog */}
@@ -64,6 +66,7 @@ export function ItemCard({ item, onContainerClick, parentContainer, onItemSave }
         onOpenChange={setIsEditDialogOpen}
         isReadOnly={false}
         onItemSave={onItemSave}
+        locations={locations}
       >
         <Card 
           onClick={handleCardClick}

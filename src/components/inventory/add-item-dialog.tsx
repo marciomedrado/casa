@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -19,9 +19,10 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import type { Item, SubContainer } from '@/lib/types';
+import type { Item, SubContainer, Location } from '@/lib/types';
 import { Checkbox } from '../ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MOCK_LOCATIONS } from '@/lib/data';
 
 export function AddItemDialog({ 
     children, 
@@ -31,6 +32,7 @@ export function AddItemDialog({
     onOpenChange: setControlledOpen,
     isReadOnly = false,
     onItemSave,
+    locations,
 }: { 
     children?: React.ReactNode, 
     itemToEdit?: Item,
@@ -39,6 +41,7 @@ export function AddItemDialog({
     onOpenChange?: (open: boolean) => void,
     isReadOnly?: boolean,
     onItemSave?: (item: Item) => void,
+    locations?: Location[],
 }) {
     const [internalOpen, setInternalOpen] = useState(false);
     
@@ -56,9 +59,27 @@ export function AddItemDialog({
     const [subContainer, setSubContainer] = useState<SubContainer | null>(null);
     const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
     const [isThinking, setIsThinking] = useState(false);
+    const [locationId, setLocationId] = useState<string | null>(null);
     const { toast } = useToast();
 
     const isEditMode = itemToEdit !== undefined && !isReadOnly;
+
+    const flattenedLocations = useMemo(() => {
+        const flatten = (locations: Location[], parentPath: string[] = []): { id: string; name: string; fullPath: string }[] => {
+            let flatList: { id: string; name: string; fullPath: string }[] = [];
+            if (!locations) return flatList;
+            for (const loc of locations) {
+                const currentPath = [...parentPath, loc.name];
+                flatList.push({ id: loc.id, name: loc.name, fullPath: currentPath.join(' / ') });
+                if (loc.children && loc.children.length > 0) {
+                    flatList = flatList.concat(flatten(loc.children, currentPath));
+                }
+            }
+            return flatList;
+        };
+        return flatten(locations || []);
+    }, [locations]);
+
 
     useEffect(() => {
         if (open && itemToEdit) {
@@ -70,6 +91,7 @@ export function AddItemDialog({
             setDoorCount(itemToEdit.doorCount ?? 0);
             setDrawerCount(itemToEdit.drawerCount ?? 0);
             setSubContainer(itemToEdit.subContainer ?? null);
+            setLocationId(itemToEdit.locationId);
         } else if (!open) {
             // Reset form on close
             setName('');
@@ -82,6 +104,7 @@ export function AddItemDialog({
             setDoorCount(0);
             setDrawerCount(0);
             setSubContainer(null);
+            setLocationId(null);
         }
     }, [open, itemToEdit]);
 
@@ -140,6 +163,8 @@ export function AddItemDialog({
             return;
         }
 
+        const selectedLocation = flattenedLocations.find(l => l.id === locationId);
+
         // Construct the updated item
         const updatedItem: Item = {
             ...itemToEdit,
@@ -151,17 +176,18 @@ export function AddItemDialog({
             doorCount,
             drawerCount,
             subContainer,
+            locationId: locationId || itemToEdit.locationId,
+            locationPath: selectedLocation ? selectedLocation.fullPath.split(' / ') : itemToEdit.locationPath,
         };
         
         // Update location path based on subcontainer
-        const parentPath = parentContainer?.locationPath.join(' / ') || itemToEdit.locationPath.slice(0, -1).join(' / ');
-        const parentPathArray = parentPath.split(' / ').filter(p => p);
+        const parentPath = selectedLocation?.fullPath ? selectedLocation.fullPath.split(' / ') : itemToEdit.locationPath.slice(0, -1);
         
         if (subContainer) {
             const subContainerName = `${subContainer.type === 'door' ? 'Porta' : 'Gaveta'} ${subContainer.number}`;
-            updatedItem.locationPath = [...parentPathArray, subContainerName];
+            updatedItem.locationPath = [...parentPath, subContainerName];
         } else {
-            updatedItem.locationPath = [...parentPathArray];
+            updatedItem.locationPath = [...parentPath];
         }
 
 
@@ -224,6 +250,23 @@ export function AddItemDialog({
               Descrição
             </Label>
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" readOnly={isReadOnly} />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="location" className="text-right">
+              Local
+            </Label>
+            <Select onValueChange={(value) => setLocationId(value)} value={locationId ?? ''} disabled={isReadOnly}>
+                <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Selecione um local" />
+                </SelectTrigger>
+                <SelectContent>
+                    {flattenedLocations.map(loc => (
+                        <SelectItem key={loc.id} value={loc.id}>
+                            {loc.fullPath}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="isContainer" className="text-right">

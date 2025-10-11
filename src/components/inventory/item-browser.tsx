@@ -1,8 +1,9 @@
 
+
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
-import type { Item } from '@/lib/types';
+import type { Item, Location } from '@/lib/types';
 import { ItemList } from './item-list';
 import { AddItemDialog } from './add-item-dialog';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,15 @@ import { PlusCircle, Home, DoorOpen, Rows3 } from 'lucide-react';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator, BreadcrumbPage } from '@/components/ui/breadcrumb';
 import { Separator } from '../ui/separator';
 
-export function ItemBrowser({ allItems: initialItems }: { allItems: Item[] }) {
+export function ItemBrowser({ 
+  allItems: initialItems, 
+  visibleItems,
+  allLocations 
+}: { 
+  allItems: Item[],
+  visibleItems: Item[],
+  allLocations: Location[]
+}) {
   const [allItems, setAllItems] = useState(initialItems);
   const [currentContainerId, setCurrentContainerId] = useState<string | null>(null);
   
@@ -26,7 +35,9 @@ export function ItemBrowser({ allItems: initialItems }: { allItems: Item[] }) {
   }, [currentContainerId, itemMap]);
 
   const { looseItems, drawerItems, doorItems } = useMemo(() => {
-    const items = allItems.filter(item => item.parentId === currentContainerId);
+    const items = currentContainerId 
+      ? allItems.filter(item => item.parentId === currentContainerId)
+      : visibleItems;
     
     const looseItems: Item[] = [];
     const drawerItems: { [key: number]: Item[] } = {};
@@ -49,7 +60,7 @@ export function ItemBrowser({ allItems: initialItems }: { allItems: Item[] }) {
     });
 
     return { looseItems, drawerItems, doorItems };
-  }, [allItems, currentContainerId]);
+  }, [allItems, visibleItems, currentContainerId]);
 
 
   const handleContainerClick = (itemId: string) => {
@@ -94,7 +105,7 @@ export function ItemBrowser({ allItems: initialItems }: { allItems: Item[] }) {
         {icon}
         <h3 className="text-lg font-semibold">{title}</h3>
       </div>
-      <ItemList items={items} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={handleItemSave} />
+      <ItemList items={items} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={handleItemSave} locations={allLocations} />
     </div>
   );
 
@@ -124,7 +135,7 @@ export function ItemBrowser({ allItems: initialItems }: { allItems: Item[] }) {
           </BreadcrumbList>
         </Breadcrumb>
 
-        <AddItemDialog parentContainer={currentContainer}>
+        <AddItemDialog parentContainer={currentContainer} locations={allLocations}>
           <Button>
             <PlusCircle className="mr-2 h-4 w-4" />
             Adicionar Item
@@ -157,7 +168,7 @@ export function ItemBrowser({ allItems: initialItems }: { allItems: Item[] }) {
               <>
                 <Separator className="my-8" />
                 <h3 className="text-lg font-semibold mb-4">Itens Soltos</h3>
-                <ItemList items={looseItems} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={handleItemSave}/>
+                <ItemList items={looseItems} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={handleItemSave} locations={allLocations} />
               </>
             )}
             {
@@ -167,7 +178,7 @@ export function ItemBrowser({ allItems: initialItems }: { allItems: Item[] }) {
                 <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 text-center p-12 min-h-[400px]">
                     <h3 className="text-xl font-semibold">Container Vazio</h3>
                     <p className="text-muted-foreground mt-2 mb-4">Adicione itens a este container.</p>
-                    <AddItemDialog parentContainer={currentContainer}>
+                    <AddItemDialog parentContainer={currentContainer} locations={allLocations}>
                       <Button>
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Adicionar Item
@@ -179,7 +190,7 @@ export function ItemBrowser({ allItems: initialItems }: { allItems: Item[] }) {
           </>
         ) : (
           // Root view
-          <ItemList items={looseItems} onContainerClick={handleContainerClick} onItemSave={handleItemSave} />
+          <ItemList items={looseItems} onContainerClick={handleContainerClick} onItemSave={handleItemSave} locations={allLocations} />
         )}
       </div>
     </div>
