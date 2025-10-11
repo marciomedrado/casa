@@ -4,6 +4,7 @@ import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
+  SidebarGroupAction,
   SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
@@ -12,6 +13,7 @@ import {
 import type { Location } from '@/lib/types';
 import { Header } from './header';
 import { LocationTree } from '../inventory/location-tree';
+import { Pencil, PlusCircle } from 'lucide-react';
 
 export function AppLayout({
   children,
@@ -32,7 +34,13 @@ export function AppLayout({
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>Locais</SidebarGroupLabel>
+            <SidebarGroupLabel>Adicionar e editar locais</SidebarGroupLabel>
+            <SidebarGroupAction>
+                <PlusCircle />
+            </SidebarGroupAction>
+            <SidebarGroupAction>
+                <Pencil />
+            </SidebarGroupAction>
             <LocationTree locations={locations} propertyId={propertyId} />
           </SidebarGroup>
         </SidebarContent>
