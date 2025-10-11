@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, Pencil } from 'lucide-react';
@@ -20,7 +21,7 @@ interface LocationTreeProps {
 function LocationNode({ location, propertyId, level = 0, activeLocation, setActiveLocation, allLocations }: LocationTreeProps & { location: Location, allLocations: Location[] }) {
     const hasChildren = location.children && location.children.length > 0;
     const isActive = activeLocation === location.id;
-    const [isOpen, setIsOpen] = useState(level < 1);
+    const [isOpen, setIsOpen] = useState(level < 2);
 
     const handleLocationClick = () => {
         if (setActiveLocation) setActiveLocation(location.id);
@@ -68,20 +69,20 @@ function LocationNode({ location, propertyId, level = 0, activeLocation, setActi
     );
 }
 
-export function LocationTree({ locations, propertyId, level = 0 }: LocationTreeProps) {
-    const [activeLocation, setActiveLocation] = useState<string | null>(null);
+export function LocationTree({ locations, propertyId, level = 0, activeLocation, setActiveLocation }: LocationTreeProps) {
 
-    const flattenLocations = (locations: Location[]): Location[] => {
-        return locations.reduce((acc, loc) => {
-            acc.push(loc);
-            if (loc.children) {
-                acc.push(...flattenLocations(loc.children));
-            }
-            return acc;
-        }, [] as Location[]);
-    };
-
-    const allLocations = flattenLocations(locations);
+    const allLocations = useMemo(() => {
+        const flatten = (locs: Location[]): Location[] => {
+            return locs.reduce((acc, loc) => {
+                acc.push(loc);
+                if (loc.children) {
+                    acc.push(...flatten(loc.children));
+                }
+                return acc;
+            }, [] as Location[]);
+        };
+        return flatten(locations);
+    }, [locations]);
 
 
     if (!locations || locations.length === 0) return null;
@@ -92,7 +93,7 @@ export function LocationTree({ locations, propertyId, level = 0 }: LocationTreeP
                 <LocationNode
                     key={location.id}
                     location={location}
-                    locations={[]}
+                    locations={[]} // Pass empty array, allLocations is used for the dialog
                     allLocations={allLocations}
                     propertyId={propertyId}
                     level={level}

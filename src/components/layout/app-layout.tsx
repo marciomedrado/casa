@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -8,24 +9,30 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
-  SidebarProvider,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
 } from '@/components/ui/sidebar';
 import type { Location } from '@/lib/types';
 import { Header } from './header';
 import { LocationTree } from '../inventory/location-tree';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, LayoutGrid } from 'lucide-react';
 import { AddLocationDialog } from '../inventory/add-location-dialog';
 
 export function AppLayout({
   children,
   pageTitle,
   locations,
-  propertyId
+  propertyId,
+  selectedLocationId,
+  onLocationSelect,
 }: {
   children: React.ReactNode;
   pageTitle: string;
   locations: Location[];
   propertyId: string;
+  selectedLocationId: string | null;
+  onLocationSelect: (id: string | null) => void;
 }) {
   return (
     <SidebarProvider>
@@ -35,13 +42,28 @@ export function AppLayout({
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>Adicionar e editar locais</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => onLocationSelect(null)} isActive={selectedLocationId === null} tooltip="Todos os Itens">
+                  <LayoutGrid />
+                  <span>Todos os Itens</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+          <SidebarGroup>
+            <SidebarGroupLabel>Locais</SidebarGroupLabel>
              <AddLocationDialog locations={locations} propertyId={propertyId}>
                 <SidebarGroupAction>
                     <PlusCircle />
                 </SidebarGroupAction>
             </AddLocationDialog>
-            <LocationTree locations={locations} propertyId={propertyId} />
+            <LocationTree 
+              locations={locations} 
+              propertyId={propertyId} 
+              activeLocation={selectedLocationId}
+              setActiveLocation={onLocationSelect}
+            />
           </SidebarGroup>
         </SidebarContent>
       </Sidebar>

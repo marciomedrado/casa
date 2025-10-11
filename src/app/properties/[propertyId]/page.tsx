@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { MOCK_ITEMS, MOCK_LOCATIONS, MOCK_PROPERTIES, buildLocationTree } from '@/lib/data';
 import { AppLayout } from '@/components/layout/app-layout';
 import { ItemBrowser } from '@/components/inventory/item-browser';
@@ -20,49 +20,32 @@ export default function PropertyPage({ params }: { params: { propertyId: string 
 
   const getSubLocationIds = (locationId: string): string[] => {
     const allIds: string[] = [locationId];
-    const location = allPropertyLocations.find(l => l.id === locationId);
+    const locationMap = new Map(allPropertyLocations.map(l => [l.id, l]));
+    const stack: string[] = [locationId];
     
-    const findChildrenIds = (loc: Location) => {
-      if (loc && loc.children) {
-        loc.children.forEach(child => {
+    while (stack.length > 0) {
+      const currentId = stack.pop()!;
+      const children = allPropertyLocations.filter(l => l.parentId === currentId);
+      for (const child of children) {
+        if (!allIds.includes(child.id)) {
           allIds.push(child.id);
-          findChildrenIds(child);
-        });
-      }
-    };
-    
-    const buildTreeAndFind = (locations: Location[], parentId: string | null = null): Location | undefined => {
-        for (const loc of locations.filter(l => l.parentId === parentId)) {
-            if (loc.id === locationId) return { ...loc, children: buildLocationTree(locations, loc.id) };
-            const foundInChildren = buildTreeAndFind(locations, loc.id);
-            if (foundInChildren) return foundInChildren;
+          stack.push(child.id);
         }
-    }
-
-    const rootLocation = locationTree.find(l => {
-      if(l.id === locationId) return true;
-      const findInChild = (children: Location[]): boolean => {
-        return children.some(c => {
-          if (c.id === locationId) return true;
-          return findInChild(c.children);
-        })
       }
-      return findInChild(l.children);
-    });
-
-    if (rootLocation) {
-        findChildrenIds(buildLocationTree(allPropertyLocations, locationId)[0] ?? location);
     }
-
     return allIds;
   };
 
   const filteredItems = useMemo(() => {
     if (!selectedLocationId) {
-      return allPropertyItems.filter(item => item.parentId === null);
+      // Show only root items if no location is selected
+      return allPropertyItems.filter(item => {
+        const itemLocation = allPropertyLocations.find(l => l.id === item.locationId);
+        return !itemLocation?.parentId;
+      });
     }
     const locationIds = getSubLocationIds(selectedLocationId);
-    return allPropertyItems.filter(item => locationIds.includes(item.locationId) && item.parentId === null);
+    return allPropertyItems.filter(item => locationIds.includes(item.locationId));
   }, [selectedLocationId, allPropertyItems, allPropertyLocations]);
   
   if (!property) {
