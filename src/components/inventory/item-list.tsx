@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { AddItemDialog } from './add-item-dialog';
 
-export function ItemList({ items, onContainerClick, parentContainer, onItemSave, locations }: { items: Item[], onContainerClick: (itemId: string) => void; parentContainer?: Item | null, onItemSave?: (item: Item) => void, locations: Location[] }) {
+export function ItemList({ items, onContainerClick, parentContainer, onItemSave, locations }: { items: Item[], onContainerClick: (itemId: string) => void; parentContainer?: Item | null, onItemSave: (item: Item) => void, locations: Location[] }) {
   return (
     <div>
       {items.length === 0 ? (

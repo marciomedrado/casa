@@ -12,21 +12,18 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbS
 import { Separator } from '../ui/separator';
 
 export function ItemBrowser({ 
-  allItems: initialItems, 
+  allItems, 
   visibleItems,
-  allLocations 
+  allLocations,
+  onItemSave, // Receive the save handler
 }: { 
   allItems: Item[],
   visibleItems: Item[],
-  allLocations: Location[]
+  allLocations: Location[],
+  onItemSave: (item: Item) => void, // Define the prop type
 }) {
-  const [allItems, setAllItems] = useState(initialItems);
   const [currentContainerId, setCurrentContainerId] = useState<string | null>(null);
   
-  const handleItemSave = useCallback((updatedItem: Item) => {
-    setAllItems(prevItems => prevItems.map(item => item.id === updatedItem.id ? updatedItem : item));
-  }, []);
-
   const itemMap = useMemo(() => new Map(allItems.map(item => [item.id, item])), [allItems]);
   
   const currentContainer = useMemo(() => {
@@ -35,7 +32,8 @@ export function ItemBrowser({
   }, [currentContainerId, itemMap]);
 
   const { looseItems, drawerItems, doorItems } = useMemo(() => {
-    const items = currentContainerId 
+    // Determine which items to display: items in the current container OR the globally filtered visibleItems
+    const itemsToProcess = currentContainerId 
       ? allItems.filter(item => item.parentId === currentContainerId)
       : visibleItems;
     
@@ -43,7 +41,7 @@ export function ItemBrowser({
     const drawerItems: { [key: number]: Item[] } = {};
     const doorItems: { [key: number]: Item[] } = {};
 
-    items.forEach(item => {
+    itemsToProcess.forEach(item => {
       if (item.subContainer?.type === 'drawer') {
         if (!drawerItems[item.subContainer.number]) {
           drawerItems[item.subContainer.number] = [];
@@ -73,26 +71,31 @@ export function ItemBrowser({
   };
   
   const breadcrumbItems = useMemo(() => {
-    const path: { id: string | null; name: string }[] = [{ id: null, name: 'Todos os Itens' }];
+    // When no location filter is active, show a simpler breadcrumb.
+    if (visibleItems.length === allItems.length && !currentContainerId) {
+        return [{ id: null, name: 'Todos os Itens' }];
+    }
+
+    const path: { id: string | null; name: string }[] = [{ id: null, name: 'Itens Filtrados' }];
     let currentId = currentContainerId;
     
-    const pathIds = [];
+    const pathItems: Item[] = [];
     while (currentId) {
         const item = itemMap.get(currentId);
         if (item) {
-            pathIds.unshift(item);
+            pathItems.unshift(item);
             currentId = item.parentId ?? null;
         } else {
             currentId = null; // Should not happen with valid data
         }
     }
 
-    pathIds.forEach(item => {
+    pathItems.forEach(item => {
         path.push({ id: item.id, name: item.name });
     });
 
     return path;
-  }, [currentContainerId, itemMap]);
+  }, [currentContainerId, itemMap, visibleItems.length, allItems.length]);
 
 
   const renderSubContainer = (
@@ -105,7 +108,7 @@ export function ItemBrowser({
         {icon}
         <h3 className="text-lg font-semibold">{title}</h3>
       </div>
-      <ItemList items={items} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={handleItemSave} locations={allLocations} />
+      <ItemList items={items} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={onItemSave} locations={allLocations} />
     </div>
   );
 
@@ -135,7 +138,7 @@ export function ItemBrowser({
           </BreadcrumbList>
         </Breadcrumb>
 
-        <AddItemDialog parentContainer={currentContainer} locations={allLocations} onItemSave={handleItemSave}>
+        <AddItemDialog parentContainer={currentContainer} locations={allLocations} onItemSave={onItemSave}>
           <Button>
             <PlusCircle className="mr-2 h-4 w-4" />
             Adicionar Item
@@ -168,7 +171,7 @@ export function ItemBrowser({
               <>
                 <Separator className="my-8" />
                 <h3 className="text-lg font-semibold mb-4">Itens Soltos</h3>
-                <ItemList items={looseItems} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={handleItemSave} locations={allLocations} />
+                <ItemList items={looseItems} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={onItemSave} locations={allLocations} />
               </>
             )}
             {
@@ -178,7 +181,7 @@ export function ItemBrowser({
                 <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 text-center p-12 min-h-[400px]">
                     <h3 className="text-xl font-semibold">Container Vazio</h3>
                     <p className="text-muted-foreground mt-2 mb-4">Adicione itens a este container.</p>
-                    <AddItemDialog parentContainer={currentContainer} locations={allLocations} onItemSave={handleItemSave}>
+                    <AddItemDialog parentContainer={currentContainer} locations={allLocations} onItemSave={onItemSave}>
                       <Button>
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Adicionar Item
@@ -190,7 +193,7 @@ export function ItemBrowser({
           </>
         ) : (
           // Root view
-          <ItemList items={looseItems} onContainerClick={handleContainerClick} onItemSave={handleItemSave} locations={allLocations} />
+          <ItemList items={looseItems} onContainerClick={handleContainerClick} onItemSave={onItemSave} locations={allLocations} />
         )}
       </div>
     </div>

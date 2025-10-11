@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -34,7 +35,7 @@ export function AddItemDialog({
     open: controlledOpen,
     onOpenChange: setControlledOpen,
     isReadOnly = false,
-    onItemSave,
+    onItemSave, // This prop is now crucial
     locations,
 }: { 
     children?: React.ReactNode, 
@@ -43,7 +44,7 @@ export function AddItemDialog({
     open?: boolean,
     onOpenChange?: (open: boolean) => void,
     isReadOnly?: boolean,
-    onItemSave?: (item: Item) => void,
+    onItemSave: (item: Item) => void, // Changed to be required
     locations?: Location[],
 }) {
     const [internalOpen, setInternalOpen] = useState(false);
@@ -67,21 +68,35 @@ export function AddItemDialog({
 
     const isEditMode = itemToEdit !== undefined;
 
-    const flattenedLocations = useMemo(() => {
-        const flatten = (locations: Location[], parentPath: string[] = []): { id: string; name: string; fullPath: string }[] => {
-            let flatList: { id: string; name: string; fullPath: string }[] = [];
-            if (!locations) return flatList;
+    const { flattenedLocations, locationMap } = useMemo(() => {
+        const flatList: { id: string; name: string; fullPath: string; level: number }[] = [];
+        const map = new Map<string, {name: string, parentId: string | null}>();
+
+        const flatten = (locations: Location[], level: number = 0, parentPath: string[] = []) => {
+            if (!locations) return;
             for (const loc of locations) {
+                map.set(loc.id, { name: loc.name, parentId: loc.parentId });
                 const currentPath = [...parentPath, loc.name];
-                flatList.push({ id: loc.id, name: loc.name, fullPath: currentPath.join(' / ') });
+                flatList.push({ id: loc.id, name: loc.name, fullPath: currentPath.join(' / '), level });
                 if (loc.children && loc.children.length > 0) {
-                    flatList = flatList.concat(flatten(loc.children, currentPath));
+                    flatten(loc.children, level + 1, currentPath);
                 }
             }
-            return flatList;
         };
-        return flatten(locations || []);
+        flatten(locations || []);
+        return { flattenedLocations: flatList, locationMap: map };
     }, [locations]);
+
+    const buildFullPath = (locId: string) => {
+        const path: string[] = [];
+        let currentId: string | null = locId;
+        while(currentId && locationMap.has(currentId)) {
+            const loc = locationMap.get(currentId)!;
+            path.unshift(loc.name);
+            currentId = loc.parentId;
+        }
+        return path;
+    };
 
 
     useEffect(() => {
@@ -99,6 +114,8 @@ export function AddItemDialog({
             } else {
                  if (parentContainer) {
                     setLocationId(parentContainer.locationId);
+                } else if (flattenedLocations.length > 0) {
+                    setLocationId(null);
                 }
             }
         } else if (!open) {
@@ -115,7 +132,7 @@ export function AddItemDialog({
             setSubContainer(null);
             setLocationId(null);
         }
-    }, [open, itemToEdit, parentContainer]);
+    }, [open, itemToEdit, parentContainer, flattenedLocations]);
 
     const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (isReadOnly) return;
@@ -172,65 +189,52 @@ export function AddItemDialog({
             return;
         }
 
-        const selectedLocation = flattenedLocations.find(l => l.id === locationId);
-
-        let finalItem: Item;
-
-        if (isEditMode && itemToEdit) {
-            finalItem = {
-                ...itemToEdit,
-                name,
-                description,
-                quantity: isContainer ? 1 : quantity,
-                tags,
-                isContainer,
-                doorCount,
-                drawerCount,
-                subContainer,
-                locationId: locationId || itemToEdit.locationId,
-                locationPath: selectedLocation ? selectedLocation.fullPath.split(' / ') : itemToEdit.locationPath,
-            };
-        } else {
-             if (!locationId || !selectedLocation) {
-                toast({
-                    variant: 'destructive',
-                    title: 'Erro de Validação',
-                    description: 'Por favor, selecione um local para o novo item.',
-                });
-                return;
-            }
-            finalItem = {
-                id: generateRandomId(),
-                propertyId: parentContainer?.propertyId || 'prop-1', // Fallback, should be determined properly
-                name,
-                description,
-                quantity: isContainer ? 1 : quantity,
-                tags,
-                isContainer,
-                doorCount,
-                drawerCount,
-                subContainer,
-                locationId: locationId,
-                locationPath: selectedLocation.fullPath.split(' / '),
-                parentId: parentContainer?.id ?? null,
-                imageUrl: 'https://picsum.photos/seed/newItem/400/300', // Placeholder
-                imageHint: 'new item',
-            };
-        }
-       
-        // Update location path based on subcontainer
-        if (finalItem.subContainer) {
-            const subContainerName = `${finalItem.subContainer.type === 'door' ? 'Porta' : 'Gaveta'} ${finalItem.subContainer.number}`;
-             if(parentContainer?.name){
-                finalItem.locationPath = [...finalItem.locationPath, parentContainer.name, subContainerName];
-             } else {
-                finalItem.locationPath.push(subContainerName);
-             }
+        if (!locationId) {
+            toast({
+                variant: 'destructive',
+                title: 'Erro de Validação',
+                description: 'Por favor, selecione um local para o item.',
+            });
+            return;
         }
 
+        let finalPath = buildFullPath(locationId);
+        
+        // Append container names to the path
+        if (parentContainer?.name) {
+            finalPath.push(parentContainer.name);
+        }
+        if (subContainer) {
+            const subContainerName = `${subContainer.type === 'door' ? 'Porta' : 'Gaveta'} ${subContainer.number}`;
+            finalPath.push(subContainerName);
+        }
+
+        const baseItem = isEditMode && itemToEdit ? itemToEdit : {
+            id: generateRandomId(),
+            propertyId: parentContainer?.propertyId || (locations && locations.length > 0 ? locations[0].propertyId : 'prop-1'), // Improved fallback
+            parentId: parentContainer?.id ?? null,
+            imageUrl: 'https://picsum.photos/seed/newItem/400/300',
+            imageHint: 'new item',
+        };
+
+        const finalItem: Item = {
+            ...baseItem,
+            name,
+            description,
+            quantity: isContainer ? 1 : quantity,
+            tags,
+            isContainer,
+            doorCount: isContainer ? doorCount : undefined,
+            drawerCount: isContainer ? drawerCount : undefined,
+            locationId: locationId,
+            locationPath: finalPath,
+            subContainer: parentContainer ? subContainer : null,
+        };
 
         if (onItemSave) {
             onItemSave(finalItem);
+        } else {
+             console.error("onItemSave prop is missing!");
         }
 
         toast({
@@ -293,14 +297,14 @@ export function AddItemDialog({
             <Label htmlFor="location" className="text-right">
               Local
             </Label>
-            <Select onValueChange={(value) => setLocationId(value)} value={locationId ?? ''} disabled={isReadOnly}>
+            <Select onValueChange={(value) => setLocationId(value)} value={locationId ?? ''} disabled={isReadOnly || !!parentContainer}>
                 <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Selecione um local" />
                 </SelectTrigger>
                 <SelectContent>
                     {flattenedLocations.map(loc => (
                         <SelectItem key={loc.id} value={loc.id}>
-                            {loc.fullPath}
+                            <span style={{ paddingLeft: `${loc.level * 1.5}rem` }}>{loc.name}</span>
                         </SelectItem>
                     ))}
                 </SelectContent>
