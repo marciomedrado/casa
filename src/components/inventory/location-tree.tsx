@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronRight } from 'lucide-react';
 import type { Location } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { Icon } from './icons';
 
 interface LocationTreeProps {
   locations: Location[];
@@ -42,7 +43,7 @@ function LocationNode({ location, propertyId, level = 0, activeLocation, setActi
                         !hasChildren && "ml-9" // indent if no trigger
                     )}
                 >
-                    <location.icon className="h-4 w-4 shrink-0" />
+                    <Icon name={location.icon} className="h-4 w-4 shrink-0" />
                     <span className="truncate">{location.name}</span>
                 </Button>
             </div>

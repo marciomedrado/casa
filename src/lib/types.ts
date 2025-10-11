@@ -20,7 +20,7 @@ export type Location = {
   propertyId: string;
   parentId: string | null;
   type: 'room' | 'cabinet' | 'shelf' | 'drawer' | 'box' | 'bin' | 'other';
-  icon: LucideIcon;
+  icon: string;
   children: Location[];
 };
 

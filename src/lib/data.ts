@@ -1,17 +1,3 @@
-import {
-  Box,
-  Library,
-  Drill,
-  Wine,
-  FolderKanban,
-  Home,
-  DoorOpen,
-  Warehouse,
-  Archive,
-  BookOpen,
-  FileText,
-  GanttChartSquare,
-} from 'lucide-react';
 import type { Property, Location, Item, User } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
@@ -44,28 +30,28 @@ export const MOCK_PROPERTIES: Property[] = [
 
 const locationsProp1: Location[] = [
     {
-        id: 'loc-1-1', name: 'Sala de Estar', propertyId: 'prop-1', parentId: null, type: 'room', icon: DoorOpen,
+        id: 'loc-1-1', name: 'Sala de Estar', propertyId: 'prop-1', parentId: null, type: 'room', icon: 'DoorOpen',
         children: [
-            { id: 'loc-1-1-1', name: 'Estante de Livros', propertyId: 'prop-1', parentId: 'loc-1-1', type: 'shelf', icon: Library, children: [] },
-            { id: 'loc-1-1-2', name: 'Mesa de Centro', propertyId: 'prop-1', parentId: 'loc-1-1', type: 'other', icon: GanttChartSquare, children: [] },
+            { id: 'loc-1-1-1', name: 'Estante de Livros', propertyId: 'prop-1', parentId: 'loc-1-1', type: 'shelf', icon: 'Library', children: [] },
+            { id: 'loc-1-1-2', name: 'Mesa de Centro', propertyId: 'prop-1', parentId: 'loc-1-1', type: 'other', icon: 'GanttChartSquare', children: [] },
         ],
     },
     {
-        id: 'loc-1-2', name: 'Garagem', propertyId: 'prop-1', parentId: null, type: 'room', icon: Warehouse,
+        id: 'loc-1-2', name: 'Garagem', propertyId: 'prop-1', parentId: null, type: 'room', icon: 'Warehouse',
         children: [
-            { id: 'loc-1-2-1', name: 'Armário de Ferramentas', propertyId: 'prop-1', parentId: 'loc-1-2', type: 'cabinet', icon: Archive,
+            { id: 'loc-1-2-1', name: 'Armário de Ferramentas', propertyId: 'prop-1', parentId: 'loc-1-2', type: 'cabinet', icon: 'Archive',
                 children: [
-                    { id: 'loc-1-2-1-1', name: 'Caixa A', propertyId: 'prop-1', parentId: 'loc-1-2-1', type: 'box', icon: Box, children: [] },
+                    { id: 'loc-1-2-1-1', name: 'Caixa A', propertyId: 'prop-1', parentId: 'loc-1-2-1', type: 'box', icon: 'Box', children: [] },
                 ]
             }
         ]
     },
     {
-        id: 'loc-1-3', name: 'Escritório', propertyId: 'prop-1', parentId: null, type: 'room', icon: BookOpen,
+        id: 'loc-1-3', name: 'Escritório', propertyId: 'prop-1', parentId: null, type: 'room', icon: 'BookOpen',
         children: [
-            { id: 'loc-1-3-1', name: 'Gaveteiro', propertyId: 'prop-1', parentId: 'loc-1-3', type: 'drawer', icon: Archive,
+            { id: 'loc-1-3-1', name: 'Gaveteiro', propertyId: 'prop-1', parentId: 'loc-1-3', type: 'drawer', icon: 'Archive',
                 children: [
-                    { id: 'loc-1-3-1-1', name: 'Documentos 2023', propertyId: 'prop-1', parentId: 'loc-1-3-1', type: 'box', icon: FileText, children: [] },
+                    { id: 'loc-1-3-1-1', name: 'Documentos 2023', propertyId: 'prop-1', parentId: 'loc-1-3-1', type: 'box', icon: 'FileText', children: [] },
                 ]
             }
         ]
@@ -73,11 +59,11 @@ const locationsProp1: Location[] = [
 ];
 
 const locationsProp2: Location[] = [
-    { id: 'loc-2-1', name: 'Cozinha', propertyId: 'prop-2', parentId: null, type: 'room', icon: DoorOpen,
+    { id: 'loc-2-1', name: 'Cozinha', propertyId: 'prop-2', parentId: null, type: 'room', icon: 'DoorOpen',
         children: [
-            { id: 'loc-2-1-1', name: 'Armário de Louças', propertyId: 'prop-2', parentId: 'loc-2-1', type: 'cabinet', icon: Archive,
+            { id: 'loc-2-1-1', name: 'Armário de Louças', propertyId: 'prop-2', parentId: 'loc-2-1', type: 'cabinet', icon: 'Archive',
                 children: [
-                    { id: 'loc-2-1-1-1', name: 'Prateleira 2', propertyId: 'prop-2', parentId: 'loc-2-1-1', type: 'shelf', icon: GanttChartSquare, children: [] },
+                    { id: 'loc-2-1-1-1', name: 'Prateleira 2', propertyId: 'prop-2', parentId: 'loc-2-1-1', type: 'shelf', icon: 'GanttChartSquare', children: [] },
                 ]
             }
         ]
