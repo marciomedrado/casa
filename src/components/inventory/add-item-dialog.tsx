@@ -22,8 +22,23 @@ import { useToast } from '@/hooks/use-toast';
 import type { Item } from '@/lib/types';
 import { Checkbox } from '../ui/checkbox';
 
-export function AddItemDialog({ children, itemToEdit }: { children?: React.ReactNode, itemToEdit?: Item }) {
-    const [open, setOpen] = useState(false);
+export function AddItemDialog({ 
+    children, 
+    itemToEdit,
+    open: controlledOpen,
+    onOpenChange: setControlledOpen,
+}: { 
+    children?: React.ReactNode, 
+    itemToEdit?: Item,
+    open?: boolean,
+    onOpenChange?: (open: boolean) => void,
+}) {
+    const [internalOpen, setInternalOpen] = useState(false);
+    
+    // Determine if the dialog is controlled or uncontrolled
+    const open = controlledOpen ?? internalOpen;
+    const setOpen = setControlledOpen ?? setInternalOpen;
+
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [quantity, setQuantity] = useState(1);
@@ -112,14 +127,7 @@ export function AddItemDialog({ children, itemToEdit }: { children?: React.React
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children ?? (
-            <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Adicionar Item
-            </Button>
-        )}
-      </DialogTrigger>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Editar Item' : 'Adicionar Novo Item'}</DialogTitle>
