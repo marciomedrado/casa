@@ -12,6 +12,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarProvider,
 } from '@/components/ui/sidebar';
 import type { Location } from '@/lib/types';
 import { Header } from './header';
