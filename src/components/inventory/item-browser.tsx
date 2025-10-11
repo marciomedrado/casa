@@ -137,18 +137,22 @@ export function ItemBrowser({ allItems }: { allItems: Item[] }) {
         {currentContainer ? (
           <>
             {Object.keys(doorItems).sort().map(doorNumber => 
-              renderSubContainer(
+              <div key={`door-${doorNumber}`}>
+              {renderSubContainer(
                 `Porta ${doorNumber}`, 
                 <DoorOpen className="h-5 w-5 text-muted-foreground" />,
                 doorItems[Number(doorNumber)]
-              )
+              )}
+              </div>
             )}
             {Object.keys(drawerItems).sort().map(drawerNumber => 
-              renderSubContainer(
+              <div key={`drawer-${drawerNumber}`}>
+              {renderSubContainer(
                 `Gaveta ${drawerNumber}`,
                 <Rows3 className="h-5 w-5 text-muted-foreground" />,
                 drawerItems[Number(drawerNumber)]
-              )
+              )}
+              </div>
             )}
              {looseItems.length > 0 && (
               <>
