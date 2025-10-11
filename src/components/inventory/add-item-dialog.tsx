@@ -27,15 +27,16 @@ export function AddItemDialog({
     itemToEdit,
     open: controlledOpen,
     onOpenChange: setControlledOpen,
+    isReadOnly = false,
 }: { 
     children?: React.ReactNode, 
     itemToEdit?: Item,
     open?: boolean,
     onOpenChange?: (open: boolean) => void,
+    isReadOnly?: boolean,
 }) {
     const [internalOpen, setInternalOpen] = useState(false);
     
-    // Determine if the dialog is controlled or uncontrolled
     const open = controlledOpen ?? internalOpen;
     const setOpen = setControlledOpen ?? setInternalOpen;
 
@@ -49,7 +50,7 @@ export function AddItemDialog({
     const [isThinking, setIsThinking] = useState(false);
     const { toast } = useToast();
 
-    const isEditMode = itemToEdit !== undefined;
+    const isEditMode = itemToEdit !== undefined && !isReadOnly;
 
     useEffect(() => {
         if (open && itemToEdit) {
@@ -59,7 +60,6 @@ export function AddItemDialog({
             setTags(itemToEdit.tags);
             setIsContainer(itemToEdit.isContainer);
         } else if (!open) {
-            // Reset form when dialog closes
             setName('');
             setDescription('');
             setQuantity(1);
@@ -71,6 +71,7 @@ export function AddItemDialog({
     }, [open, itemToEdit]);
 
     const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (isReadOnly) return;
         if (e.key === 'Enter' && currentTag.trim()) {
             e.preventDefault();
             const newTag = currentTag.trim().toLowerCase();
@@ -82,12 +83,13 @@ export function AddItemDialog({
     };
     
     const removeTag = (tagToRemove: string) => {
+        if (isReadOnly) return;
         setTags(tags.filter(tag => tag !== tagToRemove));
     };
 
     useEffect(() => {
         if (!name && !description) return;
-        if (!open) return;
+        if (!open || isReadOnly) return;
 
         const handler = setTimeout(() => {
             handleSuggestTags();
@@ -96,12 +98,11 @@ export function AddItemDialog({
         return () => {
             clearTimeout(handler);
         };
-    }, [name, description, open]);
+    }, [name, description, open, isReadOnly]);
     
     const handleSuggestTags = async () => {
-        if (!name && !description) return;
+        if (!name && !description || isReadOnly) return;
         setIsThinking(true);
-        // Mock AI call
         setTimeout(() => {
             const allSuggestions = ['ferramenta', 'eletrônico', 'frágil', 'livro', 'documento', 'cozinha'];
             const suggestions = allSuggestions.filter(t => !tags.includes(t) && (name.includes(t) || description.includes(t)));
@@ -111,6 +112,7 @@ export function AddItemDialog({
     }
     
     const addSuggestedTag = (tag: string) => {
+        if (isReadOnly) return;
         if (!tags.includes(tag)) {
             setTags([...tags, tag]);
         }
@@ -118,6 +120,10 @@ export function AddItemDialog({
     }
     
     const handleSubmit = () => {
+        if (isReadOnly) {
+            setOpen(false);
+            return;
+        }
         toast({
             title: isEditMode ? "Item Atualizado!" : "Item Adicionado!",
             description: `"${name}" foi ${isEditMode ? 'atualizado' : 'adicionado'} no seu inventário.`,
@@ -125,44 +131,47 @@ export function AddItemDialog({
         setOpen(false);
     }
 
+    const dialogTitle = isReadOnly ? 'Visualizar Item' : (isEditMode ? 'Editar Item' : 'Adicionar Novo Item');
+    const dialogDescription = isReadOnly
+        ? 'Veja os detalhes do seu item abaixo.'
+        : (isEditMode
+            ? 'Atualize os detalhes do item. Clique em salvar para aplicar as mudanças.'
+            : 'Preencha os detalhes do item. Clique em salvar para adicioná-lo ao seu inventário.');
+
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? 'Editar Item' : 'Adicionar Novo Item'}</DialogTitle>
-          <DialogDescription>
-            {isEditMode 
-              ? 'Atualize os detalhes do item. Clique em salvar para aplicar as mudanças.'
-              : 'Preencha os detalhes do item. Clique em salvar para adicioná-lo ao seu inventário.'
-            }
-          </DialogDescription>
+          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="name" className="text-right">
               Nome
             </Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
+            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" readOnly={isReadOnly} />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="description" className="text-right">
               Descrição
             </Label>
-            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
+            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" readOnly={isReadOnly} />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="quantity" className="text-right">
               Quantidade
             </Label>
-            <Input id="quantity" type="number" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value, 10))} className="col-span-3" />
+            <Input id="quantity" type="number" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value, 10))} className="col-span-3" readOnly={isReadOnly} />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="isContainer" className="text-right">
                 É um container?
             </Label>
             <div className="col-span-3 flex items-center space-x-2">
-                <Checkbox id="isContainer" checked={isContainer} onCheckedChange={(checked) => setIsContainer(checked as boolean)} />
+                <Checkbox id="isContainer" checked={isContainer} onCheckedChange={(checked) => setIsContainer(checked as boolean)} disabled={isReadOnly} />
                 <label htmlFor="isContainer" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                     Pode conter outros itens
                 </label>
@@ -175,44 +184,51 @@ export function AddItemDialog({
                 <div className="col-span-3">
                     <Input 
                         id="tags" 
-                        placeholder="Pressione Enter para adicionar"
+                        placeholder={isReadOnly ? 'Sem novas tags' : "Pressione Enter para adicionar"}
                         value={currentTag}
                         onChange={(e) => setCurrentTag(e.target.value)}
                         onKeyDown={handleTagKeyDown}
+                        readOnly={isReadOnly}
                     />
                     <div className="flex flex-wrap gap-1 mt-2">
                         {tags.map(tag => (
-                            <Badge key={tag} variant="secondary" className="cursor-pointer" onClick={() => removeTag(tag)}>
-                                {tag} <span className="ml-1.5 text-xs">×</span>
+                            <Badge key={tag} variant="secondary" className={cn(!isReadOnly && "cursor-pointer")} onClick={() => removeTag(tag)}>
+                                {tag} {!isReadOnly && <span className="ml-1.5 text-xs">×</span>}
                             </Badge>
                         ))}
                     </div>
                 </div>
             </div>
-            <div className="grid grid-cols-4 items-start gap-4">
-                <div className="text-right">
-                     <Button variant="ghost" size="icon" onClick={handleSuggestTags} disabled={isThinking} className="mt-1">
-                        <BrainCircuit className={cn("h-5 w-5 text-accent", isThinking && "animate-spin")} />
-                    </Button>
-                </div>
-                <div className="col-span-3 pt-2">
-                     <p className="text-sm font-medium text-muted-foreground">Sugestões (AI)</p>
-                     {suggestedTags.length > 0 && 
-                        <div className="flex flex-wrap gap-2 mt-2">
-                            {suggestedTags.map(tag => (
-                                <Badge key={tag} variant="outline" className="cursor-pointer hover:bg-accent hover:text-accent-foreground" onClick={() => addSuggestedTag(tag)}>
-                                    + {tag}
-                                </Badge>
-                            ))}
-                        </div>
-                     }
-                     {isThinking && <p className="text-sm text-muted-foreground mt-2">Analisando...</p>}
-                     {!isThinking && suggestedTags.length === 0 && <p className="text-sm text-muted-foreground mt-2">Nenhuma sugestão no momento.</p>}
-                </div>
-            </div>
+            {!isReadOnly && (
+              <div className="grid grid-cols-4 items-start gap-4">
+                  <div className="text-right">
+                      <Button variant="ghost" size="icon" onClick={handleSuggestTags} disabled={isThinking} className="mt-1">
+                          <BrainCircuit className={cn("h-5 w-5 text-accent", isThinking && "animate-spin")} />
+                      </Button>
+                  </div>
+                  <div className="col-span-3 pt-2">
+                      <p className="text-sm font-medium text-muted-foreground">Sugestões (AI)</p>
+                      {suggestedTags.length > 0 && 
+                          <div className="flex flex-wrap gap-2 mt-2">
+                              {suggestedTags.map(tag => (
+                                  <Badge key={tag} variant="outline" className="cursor-pointer hover:bg-accent hover:text-accent-foreground" onClick={() => addSuggestedTag(tag)}>
+                                      + {tag}
+                                  </Badge>
+                              ))}
+                          </div>
+                      }
+                      {isThinking && <p className="text-sm text-muted-foreground mt-2">Analisando...</p>}
+                      {!isThinking && suggestedTags.length === 0 && <p className="text-sm text-muted-foreground mt-2">Nenhuma sugestão no momento.</p>}
+                  </div>
+              </div>
+            )}
         </div>
         <DialogFooter>
-          <Button type="submit" onClick={handleSubmit}>Salvar</Button>
+          {isReadOnly ? (
+            <Button type="button" variant="secondary" onClick={() => setOpen(false)}>Fechar</Button>
+          ) : (
+            <Button type="submit" onClick={handleSubmit}>Salvar</Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
