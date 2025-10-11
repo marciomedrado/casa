@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Pencil } from 'lucide-react';
 import type { Location } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Icon } from './icons';
+import { AddLocationDialog } from './add-location-dialog';
 
 interface LocationTreeProps {
   locations: Location[];
@@ -16,7 +17,7 @@ interface LocationTreeProps {
   setActiveLocation?: (id: string | null) => void;
 }
 
-function LocationNode({ location, propertyId, level = 0, activeLocation, setActiveLocation }: LocationTreeProps & { location: Location }) {
+function LocationNode({ location, propertyId, level = 0, activeLocation, setActiveLocation, allLocations }: LocationTreeProps & { location: Location, allLocations: Location[] }) {
     const hasChildren = location.children && location.children.length > 0;
     const isActive = activeLocation === location.id;
     const [isOpen, setIsOpen] = useState(level < 1);
@@ -26,7 +27,7 @@ function LocationNode({ location, propertyId, level = 0, activeLocation, setActi
     };
 
     return (
-        <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
+        <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full group">
             <div className="flex items-center" style={{ paddingLeft: `${level * 1}rem` }}>
                 {hasChildren && (
                     <CollapsibleTrigger asChild>
@@ -39,13 +40,18 @@ function LocationNode({ location, propertyId, level = 0, activeLocation, setActi
                     variant={isActive ? 'secondary' : 'ghost'}
                     onClick={handleLocationClick}
                     className={cn(
-                        "w-full justify-start gap-2 h-9", 
+                        "w-full justify-start gap-2 h-9 pr-8", 
                         !hasChildren && "ml-9" // indent if no trigger
                     )}
                 >
                     <Icon name={location.icon} className="h-4 w-4 shrink-0" />
                     <span className="truncate">{location.name}</span>
                 </Button>
+                <AddLocationDialog locations={allLocations} propertyId={propertyId} locationToEdit={location}>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                </AddLocationDialog>
             </div>
             {hasChildren && (
               <CollapsibleContent>
@@ -65,6 +71,19 @@ function LocationNode({ location, propertyId, level = 0, activeLocation, setActi
 export function LocationTree({ locations, propertyId, level = 0 }: LocationTreeProps) {
     const [activeLocation, setActiveLocation] = useState<string | null>(null);
 
+    const flattenLocations = (locations: Location[]): Location[] => {
+        return locations.reduce((acc, loc) => {
+            acc.push(loc);
+            if (loc.children) {
+                acc.push(...flattenLocations(loc.children));
+            }
+            return acc;
+        }, [] as Location[]);
+    };
+
+    const allLocations = flattenLocations(locations);
+
+
     if (!locations || locations.length === 0) return null;
 
     return (
@@ -74,6 +93,7 @@ export function LocationTree({ locations, propertyId, level = 0 }: LocationTreeP
                     key={location.id}
                     location={location}
                     locations={[]}
+                    allLocations={allLocations}
                     propertyId={propertyId}
                     level={level}
                     activeLocation={activeLocation}

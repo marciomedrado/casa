@@ -4,7 +4,6 @@ import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
-  SidebarGroupAction,
   SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
@@ -13,7 +12,8 @@ import {
 import type { Location } from '@/lib/types';
 import { Header } from './header';
 import { LocationTree } from '../inventory/location-tree';
-import { Pencil, PlusCircle } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
+import { AddLocationDialog } from '../inventory/add-location-dialog';
 
 export function AppLayout({
   children,
@@ -35,12 +35,11 @@ export function AppLayout({
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupLabel>Adicionar e editar locais</SidebarGroupLabel>
-            <SidebarGroupAction>
-                <PlusCircle />
-            </SidebarGroupAction>
-            <SidebarGroupAction>
-                <Pencil />
-            </SidebarGroupAction>
+             <AddLocationDialog locations={locations} propertyId={propertyId}>
+                <SidebarGroupAction>
+                    <PlusCircle />
+                </SidebarGroupAction>
+            </AddLocationDialog>
             <LocationTree locations={locations} propertyId={propertyId} />
           </SidebarGroup>
         </SidebarContent>
