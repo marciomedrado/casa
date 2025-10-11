@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -18,7 +19,15 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
-export function Header({ showSidebarTrigger = false }: { showSidebarTrigger?: boolean }) {
+export function Header({ 
+  showSidebarTrigger = false,
+  searchQuery,
+  setSearchQuery,
+}: { 
+  showSidebarTrigger?: boolean,
+  searchQuery?: string,
+  setSearchQuery?: (query: string) => void,
+}) {
   const { toast } = useToast();
   const restoreRef = useRef<HTMLInputElement>(null);
 
@@ -120,6 +129,9 @@ export function Header({ showSidebarTrigger = false }: { showSidebarTrigger?: bo
               type="search"
               placeholder="Buscar itens ou locais..."
               className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
+              value={searchQuery ?? ''}
+              onChange={(e) => setSearchQuery?.(e.target.value)}
+              disabled={!setSearchQuery}
             />
           </div>
         </form>

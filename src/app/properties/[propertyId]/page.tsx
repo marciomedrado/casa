@@ -18,6 +18,7 @@ export default function PropertyPage({ params }: { params: { propertyId: string 
   const property = useMemo(() => MOCK_PROPERTIES.find(p => p.id === propertyId), [propertyId]);
   
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // --- State for Locations ---
   const [allPropertyLocations, setAllPropertyLocations] = useState<Location[]>(() => MOCK_LOCATIONS.filter(l => l.propertyId === propertyId));
@@ -44,7 +45,8 @@ export default function PropertyPage({ params }: { params: { propertyId: string 
         // Update existing location
         return prevLocations.map(loc => {
           if (loc.id === locationToSave.id) {
-            return { ...loc, ...locationToSave };
+            // Important: do not overwrite children array
+            return { ...loc, ...locationToSave, children: loc.children };
           }
           return loc;
         });
@@ -63,7 +65,6 @@ export default function PropertyPage({ params }: { params: { propertyId: string 
 
   const getSubLocationIds = (locationId: string): string[] => {
     const allIds: string[] = [locationId];
-    const locationMap = new Map(allPropertyLocations.map(l => [l.id, l]));
     const stack: string[] = [locationId];
     
     while (stack.length > 0) {
@@ -80,12 +81,26 @@ export default function PropertyPage({ params }: { params: { propertyId: string 
   };
 
   const filteredItems = useMemo(() => {
-    if (!selectedLocationId) {
-      return allItems;
+    let items = allItems;
+
+    // Filter by selected location first
+    if (selectedLocationId) {
+      const locationIds = getSubLocationIds(selectedLocationId);
+      items = items.filter(item => locationIds.includes(item.locationId));
     }
-    const locationIds = getSubLocationIds(selectedLocationId);
-    return allItems.filter(item => locationIds.includes(item.locationId));
-  }, [selectedLocationId, allItems, allPropertyLocations]);
+    
+    // Then, filter by search query
+    if (searchQuery) {
+        const lowerCaseQuery = searchQuery.toLowerCase();
+        items = items.filter(item => 
+            item.name.toLowerCase().includes(lowerCaseQuery) ||
+            item.description.toLowerCase().includes(lowerCaseQuery) ||
+            item.tags.some(tag => tag.toLowerCase().includes(lowerCaseQuery))
+        );
+    }
+    
+    return items;
+  }, [selectedLocationId, searchQuery, allItems, allPropertyLocations]);
   
   if (!property) {
     notFound();
@@ -100,6 +115,8 @@ export default function PropertyPage({ params }: { params: { propertyId: string 
       selectedLocationId={selectedLocationId}
       onLocationSelect={setSelectedLocationId}
       onLocationSave={handleLocationSave}
+      searchQuery={searchQuery}
+      setSearchQuery={setSearchQuery}
     >
       <ItemBrowser 
         allItems={allItems} 

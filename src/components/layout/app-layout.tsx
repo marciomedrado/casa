@@ -29,6 +29,8 @@ export function AppLayout({
   selectedLocationId,
   onLocationSelect,
   onLocationSave,
+  searchQuery,
+  setSearchQuery,
 }: {
   children: React.ReactNode;
   pageTitle: string;
@@ -38,6 +40,8 @@ export function AppLayout({
   selectedLocationId: string | null;
   onLocationSelect: (id: string | null) => void;
   onLocationSave: (location: Omit<Location, 'children' | 'propertyId'> & { id?: string }) => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
 }) {
   return (
     <SidebarProvider>
@@ -76,7 +80,11 @@ export function AppLayout({
       </Sidebar>
 
       <SidebarInset className="min-h-screen flex flex-col">
-        <Header showSidebarTrigger />
+        <Header 
+          showSidebarTrigger 
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+        />
         <main className="flex-1 overflow-y-auto bg-background">
           <div className="p-4 md:p-8">
             {children}
