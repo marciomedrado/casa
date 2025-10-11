@@ -11,7 +11,6 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbS
 
 export function ItemBrowser({ allItems }: { allItems: Item[] }) {
   const [currentContainerId, setCurrentContainerId] = useState<string | null>(null);
-  const [history, setHistory] = useState<string[]>([]);
   
   const itemMap = useMemo(() => new Map(allItems.map(item => [item.id, item])), [allItems]);
   
@@ -20,15 +19,12 @@ export function ItemBrowser({ allItems }: { allItems: Item[] }) {
   }, [allItems, currentContainerId]);
 
   const handleContainerClick = (itemId: string) => {
-    setHistory([...history, currentContainerId ?? 'root']);
     setCurrentContainerId(itemId);
   };
 
-  const handleBreadcrumbClick = (itemId: string | null, index: number) => {
+  const handleBreadcrumbClick = (itemId: string | null) => {
     if (itemId === currentContainerId) return;
-    
     setCurrentContainerId(itemId);
-    setHistory(history.slice(0, index));
   };
   
   const breadcrumbItems = useMemo(() => {
@@ -37,16 +33,17 @@ export function ItemBrowser({ allItems }: { allItems: Item[] }) {
     
     const pathIds = [];
     while (currentId) {
-        pathIds.unshift(currentId);
         const item = itemMap.get(currentId);
-        currentId = item?.parentId ?? null;
+        if (item) {
+            pathIds.unshift(item);
+            currentId = item.parentId ?? null;
+        } else {
+            currentId = null; // Should not happen with valid data
+        }
     }
 
-    pathIds.forEach(id => {
-        const item = itemMap.get(id);
-        if (item) {
-            path.push({ id: item.id, name: item.name });
-        }
+    pathIds.forEach(item => {
+        path.push({ id: item.id, name: item.name });
     });
 
     return path;
@@ -63,7 +60,7 @@ export function ItemBrowser({ allItems }: { allItems: Item[] }) {
                 <BreadcrumbItem>
                   {index < breadcrumbItems.length - 1 ? (
                     <BreadcrumbLink
-                      onClick={() => handleBreadcrumbClick(item.id, index)}
+                      onClick={() => handleBreadcrumbClick(item.id)}
                       className="cursor-pointer"
                     >
                       {index === 0 && <Home className="h-4 w-4 inline-block mr-2" />}
