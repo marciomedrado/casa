@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { Item } from '@/lib/types';
 import { ItemList } from './item-list';
 import { AddItemDialog } from './add-item-dialog';
