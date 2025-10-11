@@ -131,6 +131,13 @@ export function AddItemDialog({
         setOpen(false);
     }
 
+    const handleIsContainerChange = (checked: boolean) => {
+        setIsContainer(checked);
+        if (checked) {
+            setQuantity(1);
+        }
+    }
+
     const dialogTitle = isReadOnly ? 'Visualizar Item' : (isEditMode ? 'Editar Item' : 'Adicionar Novo Item');
     const dialogDescription = isReadOnly
         ? 'Veja os detalhes do seu item abaixo.'
@@ -161,22 +168,24 @@ export function AddItemDialog({
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" readOnly={isReadOnly} />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="quantity" className="text-right">
-              Quantidade
-            </Label>
-            <Input id="quantity" type="number" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value, 10))} className="col-span-3" readOnly={isReadOnly} />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="isContainer" className="text-right">
                 É um container?
             </Label>
             <div className="col-span-3 flex items-center space-x-2">
-                <Checkbox id="isContainer" checked={isContainer} onCheckedChange={(checked) => setIsContainer(checked as boolean)} disabled={isReadOnly} />
+                <Checkbox id="isContainer" checked={isContainer} onCheckedChange={(checked) => handleIsContainerChange(checked as boolean)} disabled={isReadOnly} />
                 <label htmlFor="isContainer" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                     Pode conter outros itens
                 </label>
             </div>
           </div>
+          {!isContainer && (
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="quantity" className="text-right">
+                Quantidade
+              </Label>
+              <Input id="quantity" type="number" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value, 10))} className="col-span-3" readOnly={isReadOnly} />
+            </div>
+          )}
            <div className="grid grid-cols-4 items-start gap-4">
                 <Label htmlFor="tags" className="text-right pt-2">
                     Tags
@@ -234,3 +243,5 @@ export function AddItemDialog({
     </Dialog>
   );
 }
+
+    
