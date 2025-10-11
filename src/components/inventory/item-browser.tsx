@@ -135,7 +135,7 @@ export function ItemBrowser({
           </BreadcrumbList>
         </Breadcrumb>
 
-        <AddItemDialog parentContainer={currentContainer} locations={allLocations}>
+        <AddItemDialog parentContainer={currentContainer} locations={allLocations} onItemSave={handleItemSave}>
           <Button>
             <PlusCircle className="mr-2 h-4 w-4" />
             Adicionar Item
@@ -178,7 +178,7 @@ export function ItemBrowser({
                 <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 text-center p-12 min-h-[400px]">
                     <h3 className="text-xl font-semibold">Container Vazio</h3>
                     <p className="text-muted-foreground mt-2 mb-4">Adicione itens a este container.</p>
-                    <AddItemDialog parentContainer={currentContainer} locations={allLocations}>
+                    <AddItemDialog parentContainer={currentContainer} locations={allLocations} onItemSave={handleItemSave}>
                       <Button>
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Adicionar Item

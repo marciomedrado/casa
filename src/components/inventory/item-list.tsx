@@ -13,7 +13,7 @@ export function ItemList({ items, onContainerClick, parentContainer, onItemSave,
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 text-center p-12 min-h-[200px]">
           <h3 className="text-xl font-semibold">Nenhum item encontrado</h3>
           <p className="text-muted-foreground mt-2 mb-4">Comece a organizar adicionando seu primeiro item aqui.</p>
-          <AddItemDialog parentContainer={parentContainer} locations={locations}>
+          <AddItemDialog parentContainer={parentContainer} locations={locations} onItemSave={onItemSave}>
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" />
               Adicionar Item

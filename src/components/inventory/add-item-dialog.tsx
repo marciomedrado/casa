@@ -22,7 +22,10 @@ import { useToast } from '@/hooks/use-toast';
 import type { Item, SubContainer, Location } from '@/lib/types';
 import { Checkbox } from '../ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MOCK_LOCATIONS } from '@/lib/data';
+
+function generateRandomId() {
+    return `item-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+}
 
 export function AddItemDialog({ 
     children, 
@@ -62,7 +65,7 @@ export function AddItemDialog({
     const [locationId, setLocationId] = useState<string | null>(null);
     const { toast } = useToast();
 
-    const isEditMode = itemToEdit !== undefined && !isReadOnly;
+    const isEditMode = itemToEdit !== undefined;
 
     const flattenedLocations = useMemo(() => {
         const flatten = (locations: Location[], parentPath: string[] = []): { id: string; name: string; fullPath: string }[] => {
@@ -82,16 +85,22 @@ export function AddItemDialog({
 
 
     useEffect(() => {
-        if (open && itemToEdit) {
-            setName(itemToEdit.name);
-            setDescription(itemToEdit.description);
-            setQuantity(itemToEdit.quantity);
-            setTags(itemToEdit.tags);
-            setIsContainer(itemToEdit.isContainer);
-            setDoorCount(itemToEdit.doorCount ?? 0);
-            setDrawerCount(itemToEdit.drawerCount ?? 0);
-            setSubContainer(itemToEdit.subContainer ?? null);
-            setLocationId(itemToEdit.locationId);
+        if (open) {
+            if (itemToEdit) {
+                setName(itemToEdit.name);
+                setDescription(itemToEdit.description);
+                setQuantity(itemToEdit.quantity);
+                setTags(itemToEdit.tags);
+                setIsContainer(itemToEdit.isContainer);
+                setDoorCount(itemToEdit.doorCount ?? 0);
+                setDrawerCount(itemToEdit.drawerCount ?? 0);
+                setSubContainer(itemToEdit.subContainer ?? null);
+                setLocationId(itemToEdit.locationId);
+            } else {
+                 if (parentContainer) {
+                    setLocationId(parentContainer.locationId);
+                }
+            }
         } else if (!open) {
             // Reset form on close
             setName('');
@@ -106,7 +115,7 @@ export function AddItemDialog({
             setSubContainer(null);
             setLocationId(null);
         }
-    }, [open, itemToEdit]);
+    }, [open, itemToEdit, parentContainer]);
 
     const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (isReadOnly) return;
@@ -158,41 +167,70 @@ export function AddItemDialog({
     }
     
     const handleSubmit = () => {
-        if (isReadOnly || !itemToEdit) {
+        if (isReadOnly) {
             setOpen(false);
             return;
         }
 
         const selectedLocation = flattenedLocations.find(l => l.id === locationId);
 
-        // Construct the updated item
-        const updatedItem: Item = {
-            ...itemToEdit,
-            name,
-            description,
-            quantity: isContainer ? 1 : quantity,
-            tags,
-            isContainer,
-            doorCount,
-            drawerCount,
-            subContainer,
-            locationId: locationId || itemToEdit.locationId,
-            locationPath: selectedLocation ? selectedLocation.fullPath.split(' / ') : itemToEdit.locationPath,
-        };
-        
-        // Update location path based on subcontainer
-        const parentPath = selectedLocation?.fullPath ? selectedLocation.fullPath.split(' / ') : itemToEdit.locationPath.slice(0, -1);
-        
-        if (subContainer) {
-            const subContainerName = `${subContainer.type === 'door' ? 'Porta' : 'Gaveta'} ${subContainer.number}`;
-            updatedItem.locationPath = [...parentPath, subContainerName];
+        let finalItem: Item;
+
+        if (isEditMode && itemToEdit) {
+            finalItem = {
+                ...itemToEdit,
+                name,
+                description,
+                quantity: isContainer ? 1 : quantity,
+                tags,
+                isContainer,
+                doorCount,
+                drawerCount,
+                subContainer,
+                locationId: locationId || itemToEdit.locationId,
+                locationPath: selectedLocation ? selectedLocation.fullPath.split(' / ') : itemToEdit.locationPath,
+            };
         } else {
-            updatedItem.locationPath = [...parentPath];
+             if (!locationId || !selectedLocation) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Erro de Validação',
+                    description: 'Por favor, selecione um local para o novo item.',
+                });
+                return;
+            }
+            finalItem = {
+                id: generateRandomId(),
+                propertyId: parentContainer?.propertyId || 'prop-1', // Fallback, should be determined properly
+                name,
+                description,
+                quantity: isContainer ? 1 : quantity,
+                tags,
+                isContainer,
+                doorCount,
+                drawerCount,
+                subContainer,
+                locationId: locationId,
+                locationPath: selectedLocation.fullPath.split(' / '),
+                parentId: parentContainer?.id ?? null,
+                imageUrl: 'https://picsum.photos/seed/newItem/400/300', // Placeholder
+                imageHint: 'new item',
+            };
+        }
+       
+        // Update location path based on subcontainer
+        if (finalItem.subContainer) {
+            const subContainerName = `${finalItem.subContainer.type === 'door' ? 'Porta' : 'Gaveta'} ${finalItem.subContainer.number}`;
+             if(parentContainer?.name){
+                finalItem.locationPath = [...finalItem.locationPath, parentContainer.name, subContainerName];
+             } else {
+                finalItem.locationPath.push(subContainerName);
+             }
         }
 
 
         if (onItemSave) {
-            onItemSave(updatedItem);
+            onItemSave(finalItem);
         }
 
         toast({
