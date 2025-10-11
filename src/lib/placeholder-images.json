@@ -1,3 +1,40 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "property-1",
+      "description": "Modern suburban house",
+      "imageUrl": "https://picsum.photos/seed/prop1/600/400",
+      "imageHint": "modern house"
+    },
+    {
+      "id": "property-2",
+      "description": "Cozy apartment downtown",
+      "imageUrl": "https://picsum.photos/seed/prop2/600/400",
+      "imageHint": "apartment building"
+    },
+    {
+      "id": "item-drill",
+      "description": "A power drill on a workbench",
+      "imageUrl": "https://picsum.photos/seed/item1/400/300",
+      "imageHint": "power drill"
+    },
+    {
+      "id": "item-books",
+      "description": "A stack of old books",
+      "imageUrl": "https://picsum.photos/seed/item2/400/300",
+      "imageHint": "stack books"
+    },
+    {
+      "id": "item-glasses",
+      "description": "Crystal wine glasses on a shelf",
+      "imageUrl": "https://picsum.photos/seed/item3/400/300",
+      "imageHint": "wine glasses"
+    },
+    {
+      "id": "item-documents",
+      "description": "A folder of important documents",
+      "imageUrl": "https://picsum.photos/seed/item4/400/300",
+      "imageHint": "files documents"
+    }
+  ]
 }
