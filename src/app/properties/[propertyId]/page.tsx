@@ -9,7 +9,7 @@ import { notFound } from 'next/navigation';
 import type { Location } from '@/lib/types';
 
 export default function PropertyPage({ params }: { params: { propertyId: string } }) {
-  const propertyId = params.propertyId;
+  const { propertyId } = React.use(params);
   const property = useMemo(() => MOCK_PROPERTIES.find(p => p.id === propertyId), [propertyId]);
   
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
