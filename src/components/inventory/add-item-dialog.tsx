@@ -20,6 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import type { Item } from '@/lib/types';
+import { Checkbox } from '../ui/checkbox';
 
 export function AddItemDialog({ children, itemToEdit }: { children?: React.ReactNode, itemToEdit?: Item }) {
     const [open, setOpen] = useState(false);
@@ -28,6 +29,7 @@ export function AddItemDialog({ children, itemToEdit }: { children?: React.React
     const [quantity, setQuantity] = useState(1);
     const [tags, setTags] = useState<string[]>([]);
     const [currentTag, setCurrentTag] = useState('');
+    const [isContainer, setIsContainer] = useState(false);
     const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
     const [isThinking, setIsThinking] = useState(false);
     const { toast } = useToast();
@@ -40,6 +42,7 @@ export function AddItemDialog({ children, itemToEdit }: { children?: React.React
             setDescription(itemToEdit.description);
             setQuantity(itemToEdit.quantity);
             setTags(itemToEdit.tags);
+            setIsContainer(itemToEdit.isContainer);
         } else if (!open) {
             // Reset form when dialog closes
             setName('');
@@ -48,6 +51,7 @@ export function AddItemDialog({ children, itemToEdit }: { children?: React.React
             setTags([]);
             setCurrentTag('');
             setSuggestedTags([]);
+            setIsContainer(false);
         }
     }, [open, itemToEdit]);
 
@@ -144,6 +148,17 @@ export function AddItemDialog({ children, itemToEdit }: { children?: React.React
               Quantidade
             </Label>
             <Input id="quantity" type="number" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value, 10))} className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="isContainer" className="text-right">
+                É um container?
+            </Label>
+            <div className="col-span-3 flex items-center space-x-2">
+                <Checkbox id="isContainer" checked={isContainer} onCheckedChange={(checked) => setIsContainer(checked as boolean)} />
+                <label htmlFor="isContainer" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Pode conter outros itens
+                </label>
+            </div>
           </div>
            <div className="grid grid-cols-4 items-start gap-4">
                 <Label htmlFor="tags" className="text-right pt-2">

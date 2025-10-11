@@ -33,6 +33,9 @@ export type Item = {
   imageUrl: string;
   imageHint: string;
   locationId: string;
+  parentId: string | null; // If inside another item
+  isContainer: boolean;
   propertyId: string;
   locationPath: string[];
+  children?: Item[];
 };

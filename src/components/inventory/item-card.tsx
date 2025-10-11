@@ -5,13 +5,27 @@ import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Item } from '@/lib/types';
-import { MapPin, Pencil } from 'lucide-react';
+import { MapPin, Pencil, PackageOpen } from 'lucide-react';
 import { AddItemDialog } from './add-item-dialog';
 import { Button } from '../ui/button';
+import { cn } from '@/lib/utils';
 
-export function ItemCard({ item }: { item: Item }) {
+export function ItemCard({ item, onContainerClick }: { item: Item, onContainerClick: (itemId: string) => void }) {
+  
+  const handleCardClick = () => {
+    if (item.isContainer) {
+      onContainerClick(item.id);
+    }
+  }
+
   return (
-    <Card className="flex flex-col overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 duration-300 ease-in-out group">
+    <Card 
+      onClick={handleCardClick}
+      className={cn(
+        "flex flex-col overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 duration-300 ease-in-out group",
+        item.isContainer && "cursor-pointer"
+      )}
+    >
       <CardHeader className="p-0">
         <div className="relative aspect-[4/3] w-full">
           <Image
@@ -26,12 +40,19 @@ export function ItemCard({ item }: { item: Item }) {
             <Button
               variant="secondary"
               size="icon"
+              onClick={(e) => e.stopPropagation()}
               className="absolute top-2 right-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <Pencil className="h-4 w-4" />
               <span className="sr-only">Editar Item</span>
             </Button>
           </AddItemDialog>
+          {item.isContainer && (
+            <div className="absolute bottom-2 left-2 flex items-center gap-1 rounded-full bg-black/50 px-2 py-1 text-xs text-white">
+              <PackageOpen className="h-3 w-3" />
+              <span>Container</span>
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent className="p-4 flex-1">

@@ -4,13 +4,9 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { AddItemDialog } from './add-item-dialog';
 
-export function ItemList({ items }: { items: Item[] }) {
+export function ItemList({ items, onContainerClick }: { items: Item[], onContainerClick: (itemId: string) => void; }) {
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <h2 className="text-2xl font-bold tracking-tight">Itens</h2>
-        <AddItemDialog />
-      </div>
       {items.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 text-center p-12 min-h-[400px]">
           <h3 className="text-xl font-semibold">Nenhum item encontrado</h3>
@@ -25,7 +21,7 @@ export function ItemList({ items }: { items: Item[] }) {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {items.map((item) => (
-            <ItemCard key={item.id} item={item} />
+            <ItemCard key={item.id} item={item} onContainerClick={onContainerClick} />
           ))}
         </div>
       )}

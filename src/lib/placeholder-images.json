@@ -35,6 +35,12 @@
       "description": "A folder of important documents",
       "imageUrl": "https://picsum.photos/seed/item4/400/300",
       "imageHint": "files documents"
+    },
+    {
+      "id": "item-contracts",
+      "description": "A folder of contracts",
+      "imageUrl": "https://picsum.photos/seed/item5/400/300",
+      "imageHint": "contract papers"
     }
   ]
 }

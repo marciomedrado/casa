@@ -13,6 +13,7 @@ import {
   BookOpen,
   FileText,
   GanttChartSquare,
+  PackageOpen,
   type LucideIcon,
   type LucideProps,
 } from 'lucide-react';
@@ -30,6 +31,7 @@ export const ICONS: { [key: string]: LucideIcon } = {
   BookOpen,
   FileText,
   GanttChartSquare,
+  PackageOpen
 };
 
 export const Icon = ({ name, ...props }: { name: string } & LucideProps) => {

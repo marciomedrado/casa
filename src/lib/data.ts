@@ -77,26 +77,32 @@ export const MOCK_ITEMS: Item[] = [
     {
         id: 'item-1', propertyId: 'prop-1', locationId: 'loc-1-2-1-1', name: 'Furadeira Bosch',
         description: '110V com conjunto de brocas', quantity: 1, tags: ['ferramenta', 'elétrica'],
-        ...findImage('item-drill'),
+        ...findImage('item-drill'), isContainer: false, parentId: null,
         locationPath: ['Garagem', 'Armário de Ferramentas', 'Caixa A']
     },
     {
         id: 'item-2', propertyId: 'prop-1', locationId: 'loc-1-1-1', name: 'Coleção Guia do Mochileiro',
         description: 'Box com 5 livros', quantity: 1, tags: ['livro', 'ficção científica'],
-        ...findImage('item-books'),
+        ...findImage('item-books'), isContainer: false, parentId: null,
         locationPath: ['Sala de Estar', 'Estante de Livros']
     },
     {
         id: 'item-3', propertyId: 'prop-2', locationId: 'loc-2-1-1-1', name: 'Taças de vinho de cristal',
         description: 'Conjunto com 6 peças', quantity: 6, tags: ['cozinha', 'vidro', 'frágil'],
-        ...findImage('item-glasses'),
+        ...findImage('item-glasses'), isContainer: false, parentId: null,
         locationPath: ['Cozinha', 'Armário de Louças', 'Prateleira 2']
     },
     {
-        id: 'item-4', propertyId: 'prop-1', locationId: 'loc-1-3-1-1', name: 'Contratos e Apólices',
+        id: 'item-4', propertyId: 'prop-1', locationId: 'loc-1-3-1', name: 'Caixa de Documentos Importantes',
         description: 'Pasta com documentos importantes de 2023', quantity: 1, tags: ['documentos', 'importante', 'arquivo'],
-        ...findImage('item-documents'),
-        locationPath: ['Escritório', 'Gaveteiro', 'Documentos 2023']
+        ...findImage('item-documents'), isContainer: true, parentId: null,
+        locationPath: ['Escritório', 'Gaveteiro']
+    },
+    {
+        id: 'item-5', propertyId: 'prop-1', locationId: 'loc-1-3-1', name: 'Contratos e Apólices',
+        description: 'Contratos de aluguel e apólices de seguro.', quantity: 1, tags: ['documentos', 'legal'],
+        ...findImage('item-contracts'), isContainer: false, parentId: 'item-4',
+        locationPath: ['Escritório', 'Gaveteiro', 'Caixa de Documentos Importantes']
     }
 ];
 
@@ -109,3 +115,22 @@ export const buildLocationTree = (locations: Location[], parentId: string | null
       children: buildLocationTree(locations, location.id),
     }));
 };
+
+export const buildItemTree = (items: Item[]): Item[] => {
+  const itemMap = new Map(items.map(item => [item.id, { ...item, children: [] }]));
+  const tree: Item[] = [];
+
+  items.forEach(item => {
+    const treeItem = itemMap.get(item.id);
+    if (!treeItem) return;
+
+    if (item.parentId && itemMap.has(item.parentId)) {
+      const parent = itemMap.get(item.parentId);
+      parent?.children?.push(treeItem);
+    } else {
+      tree.push(treeItem);
+    }
+  });
+
+  return tree;
+}
