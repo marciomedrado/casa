@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,16 +19,37 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import type { Item } from '@/lib/types';
 
-export function AddItemDialog({ children }: { children?: React.ReactNode }) {
+export function AddItemDialog({ children, itemToEdit }: { children?: React.ReactNode, itemToEdit?: Item }) {
     const [open, setOpen] = useState(false);
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
+    const [quantity, setQuantity] = useState(1);
     const [tags, setTags] = useState<string[]>([]);
     const [currentTag, setCurrentTag] = useState('');
     const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
     const [isThinking, setIsThinking] = useState(false);
     const { toast } = useToast();
+
+    const isEditMode = itemToEdit !== undefined;
+
+    useEffect(() => {
+        if (open && itemToEdit) {
+            setName(itemToEdit.name);
+            setDescription(itemToEdit.description);
+            setQuantity(itemToEdit.quantity);
+            setTags(itemToEdit.tags);
+        } else if (!open) {
+            // Reset form when dialog closes
+            setName('');
+            setDescription('');
+            setQuantity(1);
+            setTags([]);
+            setCurrentTag('');
+            setSuggestedTags([]);
+        }
+    }, [open, itemToEdit]);
 
     const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && currentTag.trim()) {
@@ -77,18 +99,11 @@ export function AddItemDialog({ children }: { children?: React.ReactNode }) {
     }
     
     const handleSubmit = () => {
-        // Here you would typically handle form submission
         toast({
-            title: "Item Adicionado!",
-            description: `"${name}" foi adicionado ao seu inventário.`,
+            title: isEditMode ? "Item Atualizado!" : "Item Adicionado!",
+            description: `"${name}" foi ${isEditMode ? 'atualizado' : 'adicionado'} no seu inventário.`,
         });
         setOpen(false);
-        // Reset form state
-        setName('');
-        setDescription('');
-        setTags([]);
-        setCurrentTag('');
-        setSuggestedTags([]);
     }
 
   return (
@@ -103,9 +118,12 @@ export function AddItemDialog({ children }: { children?: React.ReactNode }) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Adicionar Novo Item</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Editar Item' : 'Adicionar Novo Item'}</DialogTitle>
           <DialogDescription>
-            Preencha os detalhes do item. Clique em salvar para adicioná-lo ao seu inventário.
+            {isEditMode 
+              ? 'Atualize os detalhes do item. Clique em salvar para aplicar as mudanças.'
+              : 'Preencha os detalhes do item. Clique em salvar para adicioná-lo ao seu inventário.'
+            }
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -125,7 +143,7 @@ export function AddItemDialog({ children }: { children?: React.ReactNode }) {
             <Label htmlFor="quantity" className="text-right">
               Quantidade
             </Label>
-            <Input id="quantity" type="number" defaultValue="1" className="col-span-3" />
+            <Input id="quantity" type="number" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value, 10))} className="col-span-3" />
           </div>
            <div className="grid grid-cols-4 items-start gap-4">
                 <Label htmlFor="tags" className="text-right pt-2">
@@ -171,7 +189,7 @@ export function AddItemDialog({ children }: { children?: React.ReactNode }) {
             </div>
         </div>
         <DialogFooter>
-          <Button type="submit" onClick={handleSubmit}>Salvar Item</Button>
+          <Button type="submit" onClick={handleSubmit}>Salvar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
