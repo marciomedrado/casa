@@ -1,5 +1,8 @@
+
+'use client';
+
 import Link from 'next/link';
-import { Home, Search } from 'lucide-react';
+import { Home, Search, Upload, Download } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,10 +14,91 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { MOCK_USER } from '@/lib/data';
+import { MOCK_USER, MOCK_PROPERTIES, MOCK_LOCATIONS, MOCK_ITEMS } from '@/lib/data';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import { useRef } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 export function Header({ showSidebarTrigger = false }: { showSidebarTrigger?: boolean }) {
+  const { toast } = useToast();
+  const restoreRef = useRef<HTMLInputElement>(null);
+
+  const convertToCSV = (data: any[], columns: string[]) => {
+    const header = columns.join(',');
+    const rows = data.map(item => 
+        columns.map(col => {
+            let val = item[col];
+            if (val === null || val === undefined) return '';
+            if (Array.isArray(val)) {
+                return `"${val.join(';')}"`;
+            }
+            return `"${String(val).replace(/"/g, '""')}"`;
+        }).join(',')
+    );
+    return [header, ...rows].join('\n');
+  }
+
+  const handleBackup = () => {
+    const downloadCSV = (filename: string, content: string) => {
+        const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    }
+
+    const propertiesCSV = convertToCSV(MOCK_PROPERTIES, ['id', 'name', 'address', 'imageUrl', 'imageHint']);
+    const locationsCSV = convertToCSV(MOCK_LOCATIONS.flatMap(l => {
+      const {children, ...rest} = l;
+      const flatChildren = l.children.map(c => ({...c, children: undefined}));
+      return [rest, ...flatChildren];
+    }), ['id', 'name', 'propertyId', 'parentId', 'type', 'icon']);
+    const itemsCSV = convertToCSV(MOCK_ITEMS, ['id', 'name', 'description', 'quantity', 'tags', 'imageUrl', 'imageHint', 'locationId', 'parentId', 'isContainer', 'propertyId', 'locationPath']);
+
+    downloadCSV('properties.csv', propertiesCSV);
+    downloadCSV('locations.csv', locationsCSV);
+    downloadCSV('items.csv', itemsCSV);
+
+    toast({
+        title: "Backup Concluído",
+        description: "Seus dados foram exportados para arquivos CSV."
+    });
+  }
+
+  const handleRestoreClick = () => {
+    restoreRef.current?.click();
+  }
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+        // For now, we just log the content. In a real app, you'd parse this
+        // and update your application state.
+        Array.from(files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                console.log(`Restoring ${file.name}:`);
+                console.log(e.target?.result);
+            };
+            reader.readAsText(file);
+        });
+
+        toast({
+            title: "Restauração Iniciada",
+            description: "Verifique o console para ver os dados restaurados.",
+        });
+    }
+    // Reset file input
+    if(restoreRef.current) restoreRef.current.value = "";
+  };
+
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-card px-4 md:px-6">
       <div className="flex items-center gap-2">
@@ -54,11 +138,26 @@ export function Header({ showSidebarTrigger = false }: { showSidebarTrigger?: bo
             <DropdownMenuLabel>{MOCK_USER.name}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>Configurações</DropdownMenuItem>
-            <DropdownMenuItem>Suporte</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleBackup}>
+              <Download className="mr-2 h-4 w-4" />
+              <span>Fazer Backup</span>
+            </DropdownMenuItem>
+             <DropdownMenuItem onClick={handleRestoreClick}>
+                <Upload className="mr-2 h-4 w-4" />
+                <span>Restaurar Backup</span>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem>Sair</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <input 
+          type="file" 
+          ref={restoreRef} 
+          multiple
+          accept=".csv"
+          onChange={handleFileChange}
+          className="hidden" 
+        />
       </div>
     </header>
   );
