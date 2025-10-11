@@ -1,10 +1,11 @@
+
 import { ItemCard } from './item-card';
 import type { Item } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { AddItemDialog } from './add-item-dialog';
 
-export function ItemList({ items, onContainerClick, parentContainer }: { items: Item[], onContainerClick: (itemId: string) => void; parentContainer?: Item | null }) {
+export function ItemList({ items, onContainerClick, parentContainer, onItemSave }: { items: Item[], onContainerClick: (itemId: string) => void; parentContainer?: Item | null, onItemSave?: (item: Item) => void }) {
   return (
     <div>
       {items.length === 0 ? (
@@ -21,7 +22,7 @@ export function ItemList({ items, onContainerClick, parentContainer }: { items: 
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {items.map((item) => (
-            <ItemCard key={item.id} item={item} onContainerClick={onContainerClick} parentContainer={parentContainer} />
+            <ItemCard key={item.id} item={item} onContainerClick={onContainerClick} parentContainer={parentContainer} onItemSave={onItemSave} />
           ))}
         </div>
       )}

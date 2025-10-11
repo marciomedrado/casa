@@ -1,8 +1,8 @@
 
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import type { Item, SubContainer } from '@/lib/types';
+import React, { useState, useMemo, useCallback } from 'react';
+import type { Item } from '@/lib/types';
 import { ItemList } from './item-list';
 import { AddItemDialog } from './add-item-dialog';
 import { Button } from '@/components/ui/button';
@@ -10,15 +10,14 @@ import { PlusCircle, Home, DoorOpen, Rows3 } from 'lucide-react';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator, BreadcrumbPage } from '@/components/ui/breadcrumb';
 import { Separator } from '../ui/separator';
 
-interface GroupedItems {
-  loose: Item[];
-  doors: { [key: number]: Item[] };
-  drawers: { [key: number]: Item[] };
-}
-
-export function ItemBrowser({ allItems }: { allItems: Item[] }) {
+export function ItemBrowser({ allItems: initialItems }: { allItems: Item[] }) {
+  const [allItems, setAllItems] = useState(initialItems);
   const [currentContainerId, setCurrentContainerId] = useState<string | null>(null);
   
+  const handleItemSave = useCallback((updatedItem: Item) => {
+    setAllItems(prevItems => prevItems.map(item => item.id === updatedItem.id ? updatedItem : item));
+  }, []);
+
   const itemMap = useMemo(() => new Map(allItems.map(item => [item.id, item])), [allItems]);
   
   const currentContainer = useMemo(() => {
@@ -95,7 +94,7 @@ export function ItemBrowser({ allItems }: { allItems: Item[] }) {
         {icon}
         <h3 className="text-lg font-semibold">{title}</h3>
       </div>
-      <ItemList items={items} onContainerClick={handleContainerClick} parentContainer={currentContainer} />
+      <ItemList items={items} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={handleItemSave} />
     </div>
   );
 
@@ -136,7 +135,7 @@ export function ItemBrowser({ allItems }: { allItems: Item[] }) {
       <div className="mt-8">
         {currentContainer ? (
           <>
-            {Object.keys(doorItems).sort().map(doorNumber => 
+            {Object.keys(doorItems).sort((a,b) => parseInt(a) - parseInt(b)).map(doorNumber => 
               <div key={`door-${doorNumber}`}>
               {renderSubContainer(
                 `Porta ${doorNumber}`, 
@@ -145,7 +144,7 @@ export function ItemBrowser({ allItems }: { allItems: Item[] }) {
               )}
               </div>
             )}
-            {Object.keys(drawerItems).sort().map(drawerNumber => 
+            {Object.keys(drawerItems).sort((a,b) => parseInt(a) - parseInt(b)).map(drawerNumber => 
               <div key={`drawer-${drawerNumber}`}>
               {renderSubContainer(
                 `Gaveta ${drawerNumber}`,
@@ -158,7 +157,7 @@ export function ItemBrowser({ allItems }: { allItems: Item[] }) {
               <>
                 <Separator className="my-8" />
                 <h3 className="text-lg font-semibold mb-4">Itens Soltos</h3>
-                <ItemList items={looseItems} onContainerClick={handleContainerClick} parentContainer={currentContainer}/>
+                <ItemList items={looseItems} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={handleItemSave}/>
               </>
             )}
             {
@@ -180,7 +179,7 @@ export function ItemBrowser({ allItems }: { allItems: Item[] }) {
           </>
         ) : (
           // Root view
-          <ItemList items={looseItems} onContainerClick={handleContainerClick} />
+          <ItemList items={looseItems} onContainerClick={handleContainerClick} onItemSave={handleItemSave} />
         )}
       </div>
     </div>

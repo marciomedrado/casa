@@ -11,7 +11,7 @@ import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
-export function ItemCard({ item, onContainerClick, parentContainer }: { item: Item, onContainerClick: (itemId: string) => void, parentContainer?: Item | null }) {
+export function ItemCard({ item, onContainerClick, parentContainer, onItemSave }: { item: Item, onContainerClick: (itemId: string) => void, parentContainer?: Item | null, onItemSave?: (item: Item) => void }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
@@ -31,10 +31,15 @@ export function ItemCard({ item, onContainerClick, parentContainer }: { item: It
   const subContainerText = () => {
     if (!item.subContainer) return null;
     const Icon = item.subContainer.type === 'door' ? DoorOpen : Rows3;
+    const pathSegments = item.locationPath;
+    const subContainerName = pathSegments[pathSegments.length-1];
+
+    if (!subContainerName.toLowerCase().includes(item.subContainer.type)) return null;
+
     return (
         <div className="flex items-center text-xs text-muted-foreground mt-1">
             <Icon className="h-3 w-3 mr-1.5" />
-            <span>{item.subContainer.type === 'door' ? 'Porta' : 'Gaveta'} {item.subContainer.number}</span>
+            <span>{subContainerName}</span>
         </div>
     );
   }
@@ -48,6 +53,7 @@ export function ItemCard({ item, onContainerClick, parentContainer }: { item: It
         open={isViewDialogOpen} 
         onOpenChange={setIsViewDialogOpen}
         isReadOnly={true}
+        onItemSave={onItemSave}
       />
       
       {/* Edit Dialog */}
@@ -57,6 +63,7 @@ export function ItemCard({ item, onContainerClick, parentContainer }: { item: It
         open={isEditDialogOpen} 
         onOpenChange={setIsEditDialogOpen}
         isReadOnly={false}
+        onItemSave={onItemSave}
       >
         <Card 
           onClick={handleCardClick}
@@ -120,7 +127,7 @@ export function ItemCard({ item, onContainerClick, parentContainer }: { item: It
             <CardTitle className="text-lg mb-1 line-clamp-1">{item.name}</CardTitle>
             <div className="flex items-center text-sm text-muted-foreground mb-1">
                 <MapPin className="h-4 w-4 mr-2 shrink-0" />
-                <span className="truncate">{item.locationPath.join(' / ')}</span>
+                <span className="truncate">{item.locationPath.slice(0, -1).join(' / ')}</span>
             </div>
             {subContainerText()}
             <CardDescription className="text-sm line-clamp-2 mt-2">{item.description}</CardDescription>

@@ -30,6 +30,7 @@ export function AddItemDialog({
     open: controlledOpen,
     onOpenChange: setControlledOpen,
     isReadOnly = false,
+    onItemSave,
 }: { 
     children?: React.ReactNode, 
     itemToEdit?: Item,
@@ -37,6 +38,7 @@ export function AddItemDialog({
     open?: boolean,
     onOpenChange?: (open: boolean) => void,
     isReadOnly?: boolean,
+    onItemSave?: (item: Item) => void,
 }) {
     const [internalOpen, setInternalOpen] = useState(false);
     
@@ -69,6 +71,7 @@ export function AddItemDialog({
             setDrawerCount(itemToEdit.drawerCount ?? 0);
             setSubContainer(itemToEdit.subContainer ?? null);
         } else if (!open) {
+            // Reset form on close
             setName('');
             setDescription('');
             setQuantity(1);
@@ -132,10 +135,40 @@ export function AddItemDialog({
     }
     
     const handleSubmit = () => {
-        if (isReadOnly) {
+        if (isReadOnly || !itemToEdit) {
             setOpen(false);
             return;
         }
+
+        // Construct the updated item
+        const updatedItem: Item = {
+            ...itemToEdit,
+            name,
+            description,
+            quantity: isContainer ? 1 : quantity,
+            tags,
+            isContainer,
+            doorCount,
+            drawerCount,
+            subContainer,
+        };
+        
+        // Update location path based on subcontainer
+        const parentPath = parentContainer?.locationPath.join(' / ') || itemToEdit.locationPath.slice(0, -1).join(' / ');
+        const parentPathArray = parentPath.split(' / ').filter(p => p);
+        
+        if (subContainer) {
+            const subContainerName = `${subContainer.type === 'door' ? 'Porta' : 'Gaveta'} ${subContainer.number}`;
+            updatedItem.locationPath = [...parentPathArray, subContainerName];
+        } else {
+            updatedItem.locationPath = [...parentPathArray];
+        }
+
+
+        if (onItemSave) {
+            onItemSave(updatedItem);
+        }
+
         toast({
             title: isEditMode ? "Item Atualizado!" : "Item Adicionado!",
             description: `"${name}" foi ${isEditMode ? 'atualizado' : 'adicionado'} no seu inventário.`,
@@ -144,6 +177,7 @@ export function AddItemDialog({
     }
 
     const handleIsContainerChange = (checked: boolean) => {
+        if (isReadOnly) return;
         setIsContainer(checked);
         if (checked) {
             setQuantity(1);
@@ -153,7 +187,7 @@ export function AddItemDialog({
     const handleSubContainerChange = (type: 'door' | 'drawer', value: string) => {
         if (isReadOnly) return;
         const number = parseInt(value, 10);
-        if (isNaN(number)) {
+        if (isNaN(number) || value === 'null') {
             setSubContainer(null);
         } else {
             setSubContainer({ type, number });
