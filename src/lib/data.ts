@@ -93,17 +93,35 @@ export const MOCK_ITEMS: Item[] = [
         locationPath: ['Cozinha', 'Armário de Louças', 'Prateleira 2']
     },
     {
-        id: 'item-4', propertyId: 'prop-1', locationId: 'loc-1-3-1', name: 'Caixa de Documentos Importantes',
-        description: 'Pasta com documentos importantes de 2023', quantity: 1, tags: ['documentos', 'importante', 'arquivo'],
-        ...findImage('item-documents'), isContainer: true, parentId: null,
-        doorCount: 2, drawerCount: 3,
-        locationPath: ['Escritório', 'Gaveteiro']
+        id: 'item-4', propertyId: 'prop-1', locationId: 'loc-1-3', name: 'Gaveteiro de Documentos',
+        description: 'Gaveteiro com 3 gavetas para organização de documentos', quantity: 1, tags: ['móvel', 'organizador', 'escritório'],
+        ...findImage('item-file-cabinet'), isContainer: true, parentId: null,
+        doorCount: 0, drawerCount: 3,
+        locationPath: ['Escritório']
     },
     {
-        id: 'item-5', propertyId: 'prop-1', locationId: 'loc-1-3-1', name: 'Contratos e Apólices',
+        id: 'item-5', propertyId: 'prop-1', locationId: 'loc-1-3', name: 'Contratos e Apólices',
         description: 'Contratos de aluguel e apólices de seguro.', quantity: 1, tags: ['documentos', 'legal'],
-        ...findImage('item-contracts'), isContainer: false, parentId: 'item-4',
-        locationPath: ['Escritório', 'Gaveteiro', 'Caixa de Documentos Importantes']
+        ...findImage('item-contracts'), isContainer: false, parentId: 'item-4', subContainer: { type: 'drawer', number: 1},
+        locationPath: ['Escritório', 'Gaveteiro de Documentos', 'Gaveta 1']
+    },
+     {
+        id: 'item-6', propertyId: 'prop-1', locationId: 'loc-1-3', name: 'Passaportes e Vistos',
+        description: 'Documentos de viagem da família', quantity: 4, tags: ['documentos', 'viagem'],
+        ...findImage('item-passports'), isContainer: false, parentId: 'item-4', subContainer: { type: 'drawer', number: 1},
+        locationPath: ['Escritório', 'Gaveteiro de Documentos', 'Gaveta 1']
+    },
+    {
+        id: 'item-7', propertyId: 'prop-1', locationId: 'loc-1-3', name: 'Manuais de Eletrônicos',
+        description: 'Manuais e garantias de aparelhos.', quantity: 1, tags: ['manuais', 'garantia'],
+        ...findImage('item-manuals'), isContainer: false, parentId: 'item-4', subContainer: { type: 'drawer', number: 2},
+        locationPath: ['Escritório', 'Gaveteiro de Documentos', 'Gaveta 2']
+    },
+    {
+        id: 'item-8', propertyId: 'prop-1', locationId: 'loc-1-3', name: 'Carregadores e Cabos',
+        description: 'Cabos USB, carregadores de celular e adaptadores diversos.', quantity: 1, tags: ['eletrônicos', 'cabos'],
+        ...findImage('item-cables'), isContainer: false, parentId: 'item-4',
+        locationPath: ['Escritório', 'Gaveteiro de Documentos']
     }
 ];
 

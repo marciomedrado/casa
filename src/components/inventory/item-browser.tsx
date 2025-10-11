@@ -2,21 +2,56 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import type { Item } from '@/lib/types';
+import type { Item, SubContainer } from '@/lib/types';
 import { ItemList } from './item-list';
 import { AddItemDialog } from './add-item-dialog';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Home } from 'lucide-react';
+import { PlusCircle, Home, DoorOpen, Rows3 } from 'lucide-react';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator, BreadcrumbPage } from '@/components/ui/breadcrumb';
+import { Separator } from '../ui/separator';
+
+interface GroupedItems {
+  loose: Item[];
+  doors: { [key: number]: Item[] };
+  drawers: { [key: number]: Item[] };
+}
 
 export function ItemBrowser({ allItems }: { allItems: Item[] }) {
   const [currentContainerId, setCurrentContainerId] = useState<string | null>(null);
   
   const itemMap = useMemo(() => new Map(allItems.map(item => [item.id, item])), [allItems]);
   
-  const currentItems = useMemo(() => {
-    return allItems.filter(item => item.parentId === currentContainerId);
+  const currentContainer = useMemo(() => {
+    if (!currentContainerId) return null;
+    return itemMap.get(currentContainerId) ?? null;
+  }, [currentContainerId, itemMap]);
+
+  const { looseItems, drawerItems, doorItems } = useMemo(() => {
+    const items = allItems.filter(item => item.parentId === currentContainerId);
+    
+    const looseItems: Item[] = [];
+    const drawerItems: { [key: number]: Item[] } = {};
+    const doorItems: { [key: number]: Item[] } = {};
+
+    items.forEach(item => {
+      if (item.subContainer?.type === 'drawer') {
+        if (!drawerItems[item.subContainer.number]) {
+          drawerItems[item.subContainer.number] = [];
+        }
+        drawerItems[item.subContainer.number].push(item);
+      } else if (item.subContainer?.type === 'door') {
+         if (!doorItems[item.subContainer.number]) {
+          doorItems[item.subContainer.number] = [];
+        }
+        doorItems[item.subContainer.number].push(item);
+      } else {
+        looseItems.push(item);
+      }
+    });
+
+    return { looseItems, drawerItems, doorItems };
   }, [allItems, currentContainerId]);
+
 
   const handleContainerClick = (itemId: string) => {
     setCurrentContainerId(itemId);
@@ -50,6 +85,20 @@ export function ItemBrowser({ allItems }: { allItems: Item[] }) {
   }, [currentContainerId, itemMap]);
 
 
+  const renderSubContainer = (
+    title: string, 
+    icon: React.ReactNode,
+    items: Item[]
+  ) => (
+    <div className="mb-8">
+      <div className="flex items-center gap-2 mb-4">
+        {icon}
+        <h3 className="text-lg font-semibold">{title}</h3>
+      </div>
+      <ItemList items={items} onContainerClick={handleContainerClick} parentContainer={currentContainer} />
+    </div>
+  );
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -76,7 +125,7 @@ export function ItemBrowser({ allItems }: { allItems: Item[] }) {
           </BreadcrumbList>
         </Breadcrumb>
 
-        <AddItemDialog>
+        <AddItemDialog parentContainer={currentContainer}>
           <Button>
             <PlusCircle className="mr-2 h-4 w-4" />
             Adicionar Item
@@ -85,7 +134,50 @@ export function ItemBrowser({ allItems }: { allItems: Item[] }) {
       </div>
 
       <div className="mt-8">
-        <ItemList items={currentItems} onContainerClick={handleContainerClick} />
+        {currentContainer ? (
+          <>
+            {Object.keys(doorItems).sort().map(doorNumber => 
+              renderSubContainer(
+                `Porta ${doorNumber}`, 
+                <DoorOpen className="h-5 w-5 text-muted-foreground" />,
+                doorItems[Number(doorNumber)]
+              )
+            )}
+            {Object.keys(drawerItems).sort().map(drawerNumber => 
+              renderSubContainer(
+                `Gaveta ${drawerNumber}`,
+                <Rows3 className="h-5 w-5 text-muted-foreground" />,
+                drawerItems[Number(drawerNumber)]
+              )
+            )}
+             {looseItems.length > 0 && (
+              <>
+                <Separator className="my-8" />
+                <h3 className="text-lg font-semibold mb-4">Itens Soltos</h3>
+                <ItemList items={looseItems} onContainerClick={handleContainerClick} parentContainer={currentContainer}/>
+              </>
+            )}
+            {
+              Object.keys(doorItems).length === 0 &&
+              Object.keys(drawerItems).length === 0 &&
+              looseItems.length === 0 && (
+                <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 text-center p-12 min-h-[400px]">
+                    <h3 className="text-xl font-semibold">Container Vazio</h3>
+                    <p className="text-muted-foreground mt-2 mb-4">Adicione itens a este container.</p>
+                    <AddItemDialog parentContainer={currentContainer}>
+                      <Button>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Adicionar Item
+                      </Button>
+                    </AddItemDialog>
+                </div>
+              )
+            }
+          </>
+        ) : (
+          // Root view
+          <ItemList items={looseItems} onContainerClick={handleContainerClick} />
+        )}
       </div>
     </div>
   );

@@ -41,6 +41,30 @@
       "description": "A folder of contracts",
       "imageUrl": "https://picsum.photos/seed/item5/400/300",
       "imageHint": "contract papers"
+    },
+    {
+      "id": "item-file-cabinet",
+      "description": "A metal file cabinet",
+      "imageUrl": "https://picsum.photos/seed/itemCabinet/400/300",
+      "imageHint": "file cabinet"
+    },
+    {
+      "id": "item-passports",
+      "description": "Several passports stacked together",
+      "imageUrl": "https://picsum.photos/seed/itemPassports/400/300",
+      "imageHint": "passports travel"
+    },
+    {
+      "id": "item-manuals",
+      "description": "A stack of product manuals",
+      "imageUrl": "https://picsum.photos/seed/itemManuals/400/300",
+      "imageHint": "product manuals"
+    },
+    {
+      "id": "item-cables",
+      "description": "A tangled pile of various electronic cables",
+      "imageUrl": "https://picsum.photos/seed/itemCables/400/300",
+      "imageHint": "tangled cables"
     }
   ]
 }

@@ -19,18 +19,21 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import type { Item } from '@/lib/types';
+import type { Item, SubContainer } from '@/lib/types';
 import { Checkbox } from '../ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function AddItemDialog({ 
     children, 
     itemToEdit,
+    parentContainer,
     open: controlledOpen,
     onOpenChange: setControlledOpen,
     isReadOnly = false,
 }: { 
     children?: React.ReactNode, 
     itemToEdit?: Item,
+    parentContainer?: Item | null,
     open?: boolean,
     onOpenChange?: (open: boolean) => void,
     isReadOnly?: boolean,
@@ -48,6 +51,7 @@ export function AddItemDialog({
     const [isContainer, setIsContainer] = useState(false);
     const [doorCount, setDoorCount] = useState(0);
     const [drawerCount, setDrawerCount] = useState(0);
+    const [subContainer, setSubContainer] = useState<SubContainer | null>(null);
     const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
     const [isThinking, setIsThinking] = useState(false);
     const { toast } = useToast();
@@ -63,6 +67,7 @@ export function AddItemDialog({
             setIsContainer(itemToEdit.isContainer);
             setDoorCount(itemToEdit.doorCount ?? 0);
             setDrawerCount(itemToEdit.drawerCount ?? 0);
+            setSubContainer(itemToEdit.subContainer ?? null);
         } else if (!open) {
             setName('');
             setDescription('');
@@ -73,6 +78,7 @@ export function AddItemDialog({
             setIsContainer(false);
             setDoorCount(0);
             setDrawerCount(0);
+            setSubContainer(null);
         }
     }, [open, itemToEdit]);
 
@@ -144,6 +150,16 @@ export function AddItemDialog({
         }
     }
 
+    const handleSubContainerChange = (type: 'door' | 'drawer', value: string) => {
+        if (isReadOnly) return;
+        const number = parseInt(value, 10);
+        if (isNaN(number)) {
+            setSubContainer(null);
+        } else {
+            setSubContainer({ type, number });
+        }
+    }
+
     const dialogTitle = isReadOnly ? 'Visualizar Item' : (isEditMode ? 'Editar Item' : 'Adicionar Novo Item');
     const dialogDescription = isReadOnly
         ? 'Veja os detalhes do seu item abaixo.'
@@ -151,6 +167,8 @@ export function AddItemDialog({
             ? 'Atualize os detalhes do item. Clique em salvar para aplicar as mudanças.'
             : 'Preencha os detalhes do item. Clique em salvar para adicioná-lo ao seu inventário.');
 
+  const hasDoors = parentContainer && parentContainer.doorCount && parentContainer.doorCount > 0;
+  const hasDrawers = parentContainer && parentContainer.drawerCount && parentContainer.drawerCount > 0;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -208,6 +226,56 @@ export function AddItemDialog({
               </div>
             </>
           )}
+
+          { parentContainer && !isContainer && (hasDoors || hasDrawers) && (
+             <div className="grid grid-cols-4 items-start gap-4 pt-2 border-t mt-2">
+                <Label className="text-right pt-2 col-span-4 text-left font-normal text-muted-foreground mb-2">Opcional: guardar em</Label>
+
+                {hasDoors && (
+                    <>
+                    <Label htmlFor="door-select" className="text-right pt-2">Porta</Label>
+                    <Select
+                        value={subContainer?.type === 'door' ? String(subContainer.number) : ''}
+                        onValueChange={(value) => handleSubContainerChange('door', value)}
+                        disabled={isReadOnly || subContainer?.type === 'drawer'}
+                    >
+                        <SelectTrigger className="col-span-3">
+                            <SelectValue placeholder="Selecione uma porta" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="null">Nenhuma</SelectItem>
+                            {Array.from({ length: parentContainer.doorCount! }, (_, i) => i + 1).map(num => (
+                                <SelectItem key={`door-${num}`} value={String(num)}>Porta {num}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    </>
+                )}
+
+                {hasDrawers && (
+                     <>
+                    <Label htmlFor="drawer-select" className="text-right pt-2">Gaveta</Label>
+                     <Select
+                        value={subContainer?.type === 'drawer' ? String(subContainer.number) : ''}
+                        onValueChange={(value) => handleSubContainerChange('drawer', value)}
+                        disabled={isReadOnly || subContainer?.type === 'door'}
+                    >
+                        <SelectTrigger className="col-span-3">
+                            <SelectValue placeholder="Selecione uma gaveta" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="null">Nenhuma</SelectItem>
+                            {Array.from({ length: parentContainer.drawerCount! }, (_, i) => i + 1).map(num => (
+                                <SelectItem key={`drawer-${num}`} value={String(num)}>Gaveta {num}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    </>
+                )}
+             </div>
+          )}
+
+
            <div className="grid grid-cols-4 items-start gap-4">
                 <Label htmlFor="tags" className="text-right pt-2">
                     Tags

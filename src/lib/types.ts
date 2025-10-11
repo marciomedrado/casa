@@ -24,6 +24,11 @@ export type Location = {
   children: Location[];
 };
 
+export type SubContainer = {
+  type: 'door' | 'drawer';
+  number: number;
+}
+
 export type Item = {
   id: string;
   name:string;
@@ -39,5 +44,6 @@ export type Item = {
   drawerCount?: number;
   propertyId: string;
   locationPath: string[];
+  subContainer?: SubContainer | null; // Which door/drawer it's in
   children?: Item[];
 };

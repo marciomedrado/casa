@@ -5,13 +5,13 @@ import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Item } from '@/lib/types';
-import { MapPin, Pencil, PackageOpen, Eye } from 'lucide-react';
+import { MapPin, Pencil, PackageOpen, Eye, DoorOpen, Rows3 } from 'lucide-react';
 import { AddItemDialog } from './add-item-dialog';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
-export function ItemCard({ item, onContainerClick }: { item: Item, onContainerClick: (itemId: string) => void }) {
+export function ItemCard({ item, onContainerClick, parentContainer }: { item: Item, onContainerClick: (itemId: string) => void, parentContainer?: Item | null }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
@@ -27,12 +27,24 @@ export function ItemCard({ item, onContainerClick }: { item: Item, onContainerCl
       setIsViewDialogOpen(true);
     }
   }
+  
+  const subContainerText = () => {
+    if (!item.subContainer) return null;
+    const Icon = item.subContainer.type === 'door' ? DoorOpen : Rows3;
+    return (
+        <div className="flex items-center text-xs text-muted-foreground mt-1">
+            <Icon className="h-3 w-3 mr-1.5" />
+            <span>{item.subContainer.type === 'door' ? 'Porta' : 'Gaveta'} {item.subContainer.number}</span>
+        </div>
+    );
+  }
 
   return (
     <>
       {/* View Dialog (read-only) */}
       <AddItemDialog 
-        itemToEdit={item} 
+        itemToEdit={item}
+        parentContainer={parentContainer} 
         open={isViewDialogOpen} 
         onOpenChange={setIsViewDialogOpen}
         isReadOnly={true}
@@ -40,7 +52,8 @@ export function ItemCard({ item, onContainerClick }: { item: Item, onContainerCl
       
       {/* Edit Dialog */}
       <AddItemDialog 
-        itemToEdit={item} 
+        itemToEdit={item}
+        parentContainer={parentContainer}
         open={isEditDialogOpen} 
         onOpenChange={setIsEditDialogOpen}
         isReadOnly={false}
@@ -105,11 +118,12 @@ export function ItemCard({ item, onContainerClick }: { item: Item, onContainerCl
           </CardHeader>
           <CardContent className="p-4 flex-1">
             <CardTitle className="text-lg mb-1 line-clamp-1">{item.name}</CardTitle>
-            <div className="flex items-center text-sm text-muted-foreground mb-2">
+            <div className="flex items-center text-sm text-muted-foreground mb-1">
                 <MapPin className="h-4 w-4 mr-2 shrink-0" />
                 <span className="truncate">{item.locationPath.join(' / ')}</span>
             </div>
-            <CardDescription className="text-sm line-clamp-2">{item.description}</CardDescription>
+            {subContainerText()}
+            <CardDescription className="text-sm line-clamp-2 mt-2">{item.description}</CardDescription>
           </CardContent>
           <CardFooter className="p-4 pt-0 flex flex-wrap gap-2">
             {item.tags.slice(0, 3).map((tag) => (

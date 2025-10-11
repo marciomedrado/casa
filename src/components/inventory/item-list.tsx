@@ -4,14 +4,14 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { AddItemDialog } from './add-item-dialog';
 
-export function ItemList({ items, onContainerClick }: { items: Item[], onContainerClick: (itemId: string) => void; }) {
+export function ItemList({ items, onContainerClick, parentContainer }: { items: Item[], onContainerClick: (itemId: string) => void; parentContainer?: Item | null }) {
   return (
     <div>
       {items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 text-center p-12 min-h-[400px]">
+        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 text-center p-12 min-h-[200px]">
           <h3 className="text-xl font-semibold">Nenhum item encontrado</h3>
-          <p className="text-muted-foreground mt-2 mb-4">Comece a organizar adicionando seu primeiro item.</p>
-          <AddItemDialog>
+          <p className="text-muted-foreground mt-2 mb-4">Comece a organizar adicionando seu primeiro item aqui.</p>
+          <AddItemDialog parentContainer={parentContainer}>
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" />
               Adicionar Item
@@ -21,7 +21,7 @@ export function ItemList({ items, onContainerClick }: { items: Item[], onContain
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {items.map((item) => (
-            <ItemCard key={item.id} item={item} onContainerClick={onContainerClick} />
+            <ItemCard key={item.id} item={item} onContainerClick={onContainerClick} parentContainer={parentContainer} />
           ))}
         </div>
       )}
