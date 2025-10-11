@@ -96,6 +96,7 @@ export const MOCK_ITEMS: Item[] = [
         id: 'item-4', propertyId: 'prop-1', locationId: 'loc-1-3-1', name: 'Caixa de Documentos Importantes',
         description: 'Pasta com documentos importantes de 2023', quantity: 1, tags: ['documentos', 'importante', 'arquivo'],
         ...findImage('item-documents'), isContainer: true, parentId: null,
+        doorCount: 2, drawerCount: 3,
         locationPath: ['Escritório', 'Gaveteiro']
     },
     {

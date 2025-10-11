@@ -15,7 +15,7 @@ export type Property = {
 };
 
 export type Location = {
-  id: string;
+  id:string;
   name: string;
   propertyId: string;
   parentId: string | null;
@@ -35,6 +35,8 @@ export type Item = {
   locationId: string;
   parentId: string | null; // If inside another item
   isContainer: boolean;
+  doorCount?: number;
+  drawerCount?: number;
   propertyId: string;
   locationPath: string[];
   children?: Item[];

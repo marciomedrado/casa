@@ -46,6 +46,8 @@ export function AddItemDialog({
     const [tags, setTags] = useState<string[]>([]);
     const [currentTag, setCurrentTag] = useState('');
     const [isContainer, setIsContainer] = useState(false);
+    const [doorCount, setDoorCount] = useState(0);
+    const [drawerCount, setDrawerCount] = useState(0);
     const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
     const [isThinking, setIsThinking] = useState(false);
     const { toast } = useToast();
@@ -59,6 +61,8 @@ export function AddItemDialog({
             setQuantity(itemToEdit.quantity);
             setTags(itemToEdit.tags);
             setIsContainer(itemToEdit.isContainer);
+            setDoorCount(itemToEdit.doorCount ?? 0);
+            setDrawerCount(itemToEdit.drawerCount ?? 0);
         } else if (!open) {
             setName('');
             setDescription('');
@@ -67,6 +71,8 @@ export function AddItemDialog({
             setCurrentTag('');
             setSuggestedTags([]);
             setIsContainer(false);
+            setDoorCount(0);
+            setDrawerCount(0);
         }
     }, [open, itemToEdit]);
 
@@ -186,6 +192,22 @@ export function AddItemDialog({
               <Input id="quantity" type="number" value={quantity} onChange={(e) => setQuantity(parseInt(e.target.value, 10))} className="col-span-3" readOnly={isReadOnly} />
             </div>
           )}
+          {isContainer && (
+            <>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="doorCount" className="text-right">
+                  Nº de Portas
+                </Label>
+                <Input id="doorCount" type="number" value={doorCount} onChange={(e) => setDoorCount(parseInt(e.target.value, 10))} className="col-span-3" readOnly={isReadOnly} />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="drawerCount" className="text-right">
+                  Nº de Gavetas
+                </Label>
+                <Input id="drawerCount" type="number" value={drawerCount} onChange={(e) => setDrawerCount(parseInt(e.target.value, 10))} className="col-span-3" readOnly={isReadOnly} />
+              </div>
+            </>
+          )}
            <div className="grid grid-cols-4 items-start gap-4">
                 <Label htmlFor="tags" className="text-right pt-2">
                     Tags
@@ -243,5 +265,3 @@ export function AddItemDialog({
     </Dialog>
   );
 }
-
-    
