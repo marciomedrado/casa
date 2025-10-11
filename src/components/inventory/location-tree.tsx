@@ -12,13 +12,15 @@ import { AddLocationDialog } from './add-location-dialog';
 
 interface LocationTreeProps {
   locations: Location[];
+  allRawLocations: Location[];
   propertyId: string;
   level?: number;
   activeLocation?: string | null;
   setActiveLocation?: (id: string | null) => void;
+  onLocationSave: (location: Omit<Location, 'children' | 'propertyId'> & { id?: string }) => void;
 }
 
-function LocationNode({ location, propertyId, level = 0, activeLocation, setActiveLocation, allLocations }: LocationTreeProps & { location: Location, allLocations: Location[] }) {
+function LocationNode({ location, propertyId, level = 0, activeLocation, setActiveLocation, allRawLocations, onLocationSave }: LocationTreeProps & { location: Location }) {
     const hasChildren = location.children && location.children.length > 0;
     const isActive = activeLocation === location.id;
     const [isOpen, setIsOpen] = useState(level < 2);
@@ -48,7 +50,7 @@ function LocationNode({ location, propertyId, level = 0, activeLocation, setActi
                     <Icon name={location.icon} className="h-4 w-4 shrink-0" />
                     <span className="truncate">{location.name}</span>
                 </Button>
-                <AddLocationDialog locations={allLocations} propertyId={propertyId} locationToEdit={location}>
+                <AddLocationDialog locations={allRawLocations} propertyId={propertyId} locationToEdit={location} onLocationSave={onLocationSave}>
                     <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Pencil className="h-4 w-4" />
                     </Button>
@@ -58,10 +60,12 @@ function LocationNode({ location, propertyId, level = 0, activeLocation, setActi
               <CollapsibleContent>
                   <LocationTree
                       locations={location.children}
+                      allRawLocations={allRawLocations}
                       propertyId={propertyId}
                       level={level + 1}
                       activeLocation={activeLocation}
                       setActiveLocation={setActiveLocation}
+                      onLocationSave={onLocationSave}
                   />
               </CollapsibleContent>
             )}
@@ -69,21 +73,7 @@ function LocationNode({ location, propertyId, level = 0, activeLocation, setActi
     );
 }
 
-export function LocationTree({ locations, propertyId, level = 0, activeLocation, setActiveLocation }: LocationTreeProps) {
-
-    const allLocations = useMemo(() => {
-        const flatten = (locs: Location[]): Location[] => {
-            return locs.reduce((acc, loc) => {
-                acc.push(loc);
-                if (loc.children) {
-                    acc.push(...flatten(loc.children));
-                }
-                return acc;
-            }, [] as Location[]);
-        };
-        return flatten(locations);
-    }, [locations]);
-
+export function LocationTree({ locations, allRawLocations, propertyId, level = 0, activeLocation, setActiveLocation, onLocationSave }: LocationTreeProps) {
 
     if (!locations || locations.length === 0) return null;
 
@@ -93,12 +83,13 @@ export function LocationTree({ locations, propertyId, level = 0, activeLocation,
                 <LocationNode
                     key={location.id}
                     location={location}
-                    locations={[]} // Pass empty array, allLocations is used for the dialog
-                    allLocations={allLocations}
+                    locations={[]} // Pass empty array, allRawLocations is used for the dialog
+                    allRawLocations={allRawLocations}
                     propertyId={propertyId}
                     level={level}
                     activeLocation={activeLocation}
                     setActiveLocation={setActiveLocation}
+                    onLocationSave={onLocationSave}
                 />
             ))}
         </div>

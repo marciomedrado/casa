@@ -24,16 +24,20 @@ export function AppLayout({
   children,
   pageTitle,
   locations,
+  allRawLocations,
   propertyId,
   selectedLocationId,
   onLocationSelect,
+  onLocationSave,
 }: {
   children: React.ReactNode;
   pageTitle: string;
   locations: Location[];
+  allRawLocations: Location[];
   propertyId: string;
   selectedLocationId: string | null;
   onLocationSelect: (id: string | null) => void;
+  onLocationSave: (location: Omit<Location, 'children' | 'propertyId'> & { id?: string }) => void;
 }) {
   return (
     <SidebarProvider>
@@ -54,7 +58,7 @@ export function AppLayout({
           </SidebarGroup>
           <SidebarGroup>
             <SidebarGroupLabel>Locais</SidebarGroupLabel>
-             <AddLocationDialog locations={locations} propertyId={propertyId}>
+             <AddLocationDialog locations={allRawLocations} propertyId={propertyId} onLocationSave={onLocationSave}>
                 <SidebarGroupAction>
                     <PlusCircle />
                 </SidebarGroupAction>
@@ -62,8 +66,10 @@ export function AppLayout({
             <LocationTree 
               locations={locations} 
               propertyId={propertyId} 
+              allRawLocations={allRawLocations}
               activeLocation={selectedLocationId}
               setActiveLocation={onLocationSelect}
+              onLocationSave={onLocationSave}
             />
           </SidebarGroup>
         </SidebarContent>

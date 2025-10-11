@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { use, useMemo, useState } from 'react';
@@ -8,26 +9,55 @@ import { ItemBrowser } from '@/components/inventory/item-browser';
 import { notFound } from 'next/navigation';
 import type { Location, Item } from '@/lib/types';
 
+function generateRandomId(prefix: string) {
+    return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+}
+
 export default function PropertyPage({ params }: { params: { propertyId: string } }) {
   const { propertyId } = use(params);
   const property = useMemo(() => MOCK_PROPERTIES.find(p => p.id === propertyId), [propertyId]);
   
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
-  
-  const allPropertyLocations = useMemo(() => MOCK_LOCATIONS.filter(l => l.propertyId === propertyId), [propertyId]);
+
+  // --- State for Locations ---
+  const [allPropertyLocations, setAllPropertyLocations] = useState<Location[]>(() => MOCK_LOCATIONS.filter(l => l.propertyId === propertyId));
   const locationTree = useMemo(() => buildLocationTree(allPropertyLocations), [allPropertyLocations]);
   
-  // State for all items is now managed at the page level
+  // --- State for Items ---
   const [allItems, setAllItems] = useState<Item[]>(() => MOCK_ITEMS.filter(i => i.propertyId === propertyId));
 
   const handleItemSave = (updatedItem: Item) => {
-    // This function updates the master list of items
     setAllItems(prevItems => {
         const itemExists = prevItems.some(item => item.id === updatedItem.id);
         if (itemExists) {
             return prevItems.map(item => item.id === updatedItem.id ? updatedItem : item);
         }
         return [...prevItems, updatedItem];
+    });
+  };
+
+  const handleLocationSave = (locationToSave: Omit<Location, 'children' | 'propertyId'> & { id?: string }) => {
+    setAllPropertyLocations(prevLocations => {
+      const isEditing = locationToSave.id && prevLocations.some(l => l.id === locationToSave.id);
+      
+      if (isEditing) {
+        // Update existing location
+        return prevLocations.map(loc => {
+          if (loc.id === locationToSave.id) {
+            return { ...loc, ...locationToSave };
+          }
+          return loc;
+        });
+      } else {
+        // Add new location
+        const newLocation: Location = {
+          ...locationToSave,
+          id: generateRandomId('loc'),
+          propertyId,
+          children: [],
+        };
+        return [...prevLocations, newLocation];
+      }
     });
   };
 
@@ -51,13 +81,7 @@ export default function PropertyPage({ params }: { params: { propertyId: string 
 
   const filteredItems = useMemo(() => {
     if (!selectedLocationId) {
-      // Show only root items if no location is selected
-      return allItems.filter(item => {
-        const itemLocation = allPropertyLocations.find(l => l.id === item.locationId);
-        // This logic might need adjustment depending on desired root view behavior.
-        // For now, let's show all items when no location is selected.
-        return true; 
-      });
+      return allItems;
     }
     const locationIds = getSubLocationIds(selectedLocationId);
     return allItems.filter(item => locationIds.includes(item.locationId));
@@ -71,12 +95,13 @@ export default function PropertyPage({ params }: { params: { propertyId: string 
     <AppLayout 
       pageTitle={property.name} 
       locations={locationTree} 
+      allRawLocations={allPropertyLocations}
       propertyId={property.id}
       selectedLocationId={selectedLocationId}
       onLocationSelect={setSelectedLocationId}
+      onLocationSave={handleLocationSave}
     >
       <ItemBrowser 
-        // Pass down the master item list, the filtered list, and the save handler
         allItems={allItems} 
         visibleItems={filteredItems}
         allLocations={locationTree}

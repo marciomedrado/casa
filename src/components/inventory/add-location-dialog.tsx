@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -23,9 +24,10 @@ interface AddLocationDialogProps {
   propertyId: string;
   locations: Location[];
   locationToEdit?: Location;
+  onLocationSave: (location: Omit<Location, 'children' | 'propertyId'> & { id?: string }) => void;
 }
 
-export function AddLocationDialog({ children, propertyId, locations, locationToEdit }: AddLocationDialogProps) {
+export function AddLocationDialog({ children, propertyId, locations, locationToEdit, onLocationSave }: AddLocationDialogProps) {
     const [open, setOpen] = useState(false);
     const [name, setName] = useState('');
     const [parentId, setParentId] = useState<string | null>(null);
@@ -36,10 +38,12 @@ export function AddLocationDialog({ children, propertyId, locations, locationToE
     const availableIcons = Object.keys(ICONS);
 
     useEffect(() => {
-        if (open && isEditMode && locationToEdit) {
-            setName(locationToEdit.name);
-            setParentId(locationToEdit.parentId);
-            setIcon(locationToEdit.icon);
+        if (open) {
+            if (isEditMode && locationToEdit) {
+                setName(locationToEdit.name);
+                setParentId(locationToEdit.parentId);
+                setIcon(locationToEdit.icon);
+            }
         } else if (!open) {
             // Reset form when dialog closes
             setName('');
@@ -49,6 +53,23 @@ export function AddLocationDialog({ children, propertyId, locations, locationToE
     }, [open, isEditMode, locationToEdit]);
     
     const handleSubmit = () => {
+        if (!name) {
+             toast({
+                variant: 'destructive',
+                title: 'Erro de Validação',
+                description: 'O nome do local não pode ser vazio.',
+            });
+            return;
+        }
+
+        onLocationSave({
+            id: locationToEdit?.id,
+            name,
+            parentId,
+            icon,
+            type: 'other' // This can be expanded upon later
+        });
+
         toast({
             title: isEditMode ? "Local Atualizado!" : "Local Adicionado!",
             description: `"${name}" foi ${isEditMode ? 'atualizado' : 'adicionado'}.`,
