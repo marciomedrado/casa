@@ -22,7 +22,7 @@ export default function SettingsPage() {
     }
   }, [user, loading, isLoggingIn, router]);
 
-  if (loading || !user) {
+  if (loading || isLoggingIn || !user) {
     return (
         <div className="flex flex-col min-h-screen bg-background">
             <Header />

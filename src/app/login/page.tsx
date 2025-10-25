@@ -21,13 +21,6 @@ export default function LoginPage() {
     const { user, login, loading, isLoggingIn } = useAuth();
     const router = useRouter();
 
-    useEffect(() => {
-        // Only redirect if the user is authenticated and not in the middle of a login process
-        if (!loading && !isLoggingIn && user) {
-            router.push('/');
-        }
-    }, [user, loading, isLoggingIn, router]);
-    
     const handleLogin = async () => {
         await login();
     }

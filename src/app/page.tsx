@@ -88,7 +88,7 @@ export default function Dashboard() {
     }
   };
   
-  const pageIsLoading = loading || propertiesLoading || !properties;
+  const pageIsLoading = loading || propertiesLoading || !user;
 
   if (pageIsLoading) {
     return (
@@ -104,6 +104,21 @@ export default function Dashboard() {
                     <Skeleton className="h-40 w-full" />
                     <Skeleton className="h-40 w-full" />
                 </div>
+            </main>
+        </div>
+    )
+  }
+
+  if (!properties) {
+    // This can happen briefly while properties are loading
+    return (
+        <div className="flex flex-col min-h-screen bg-background">
+            <Header />
+            <main className="flex-1 container mx-auto p-4 md:p-8">
+                <div className="flex items-center justify-between mb-8">
+                  <h1 className="text-3xl font-bold tracking-tight">Minhas Propriedades</h1>
+                </div>
+                <p>Carregando propriedades...</p>
             </main>
         </div>
     )

@@ -63,7 +63,7 @@ export default function AdminPage() {
     }
   };
 
-  const pageIsLoading = authLoading || profileLoading || usersLoading;
+  const pageIsLoading = authLoading || profileLoading || usersLoading || isLoggingIn;
 
   if (pageIsLoading || userProfile?.role !== 'admin') {
     return (
