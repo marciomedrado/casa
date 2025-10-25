@@ -11,7 +11,7 @@ export function useAuth() {
   const router = useRouter();
 
   const login = useCallback(async () => {
-    if (!auth || !firestore) return;
+    if (!auth || !firestore) return false;
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
@@ -30,12 +30,12 @@ export function useAuth() {
           createdAt: serverTimestamp(),
         });
       }
-      
-      router.push('/');
+      return true;
     } catch (error) {
       console.error('Error during sign-in:', error);
+      return false;
     }
-  }, [auth, firestore, router]);
+  }, [auth, firestore]);
 
   const logout = useCallback(async () => {
     if (!auth) return;

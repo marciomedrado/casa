@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -22,15 +21,18 @@ export default function LoginPage() {
     const { user, login, loading } = useAuth();
     const router = useRouter();
 
-    // This effect handles redirection AFTER a user is successfully authenticated and available in the hook.
     useEffect(() => {
         if (!loading && user) {
             router.push('/');
         }
     }, [user, loading, router]);
     
-    // We no longer need to show a loading state on this page,
-    // as the `useAuth` hook will trigger a redirect once the user is available.
+    const handleLogin = async () => {
+        const success = await login();
+        if (success) {
+            router.push('/');
+        }
+    }
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
@@ -46,7 +48,7 @@ export default function LoginPage() {
                     <CardDescription>Faça login para organizar sua casa.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Button onClick={login} disabled={loading} className="w-full">
+                    <Button onClick={handleLogin} disabled={loading} className="w-full">
                         {loading ? 'Carregando...' : (
                             <>
                                 <GoogleIcon className="mr-2"/>
