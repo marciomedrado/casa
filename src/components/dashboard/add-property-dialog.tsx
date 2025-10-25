@@ -16,18 +16,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import type { Property } from '@/lib/types';
+import { useAuth } from '@/hooks/use-auth';
+import { useFirebase } from '@/firebase';
+import { collection, addDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 interface AddPropertyDialogProps {
   children: React.ReactNode;
   propertyToEdit?: Property;
-  onPropertySave: (property: Omit<Property, 'id' | 'imageUrl' | 'imageHint'> & { id?: string }) => void;
 }
 
-export function AddPropertyDialog({ children, propertyToEdit, onPropertySave }: AddPropertyDialogProps) {
+export function AddPropertyDialog({ children, propertyToEdit }: AddPropertyDialogProps) {
     const [open, setOpen] = useState(false);
     const [name, setName] = useState('');
     const [address, setAddress] = useState('');
     const { toast } = useToast();
+    const { user } = useAuth();
+    const { firestore } = useFirebase();
 
     const isEditMode = propertyToEdit !== undefined;
 
@@ -44,7 +48,7 @@ export function AddPropertyDialog({ children, propertyToEdit, onPropertySave }: 
         }
     }, [open, isEditMode, propertyToEdit]);
     
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!name || !address) {
              toast({
                 variant: 'destructive',
@@ -53,18 +57,48 @@ export function AddPropertyDialog({ children, propertyToEdit, onPropertySave }: 
             });
             return;
         }
+        
+        if (!user || !firestore) {
+             toast({
+                variant: 'destructive',
+                title: 'Erro de Autenticação',
+                description: 'Você precisa estar logado para realizar esta ação.',
+            });
+            return;
+        }
 
-        onPropertySave({
-            id: propertyToEdit?.id,
-            name,
-            address,
-        });
+        try {
+          if (isEditMode && propertyToEdit) {
+            const propertyRef = doc(firestore, 'properties', propertyToEdit.id);
+            await updateDoc(propertyRef, {
+              name,
+              address,
+            });
+          } else {
+            await addDoc(collection(firestore, 'properties'), {
+              name,
+              address,
+              ownerId: user.uid,
+              createdAt: serverTimestamp(),
+              imageUrl: `https://picsum.photos/seed/${Date.now()}/600/400`,
+              imageHint: 'modern house',
+            });
+          }
 
-        toast({
-            title: isEditMode ? "Imóvel Atualizado!" : "Imóvel Adicionado!",
-            description: `"${name}" foi ${isEditMode ? 'atualizado' : 'adicionado'}.`,
-        });
-        setOpen(false);
+          toast({
+              title: isEditMode ? "Imóvel Atualizado!" : "Imóvel Adicionado!",
+              description: `"${name}" foi ${isEditMode ? 'atualizado' : 'adicionado'}.`,
+          });
+          setOpen(false);
+
+        } catch (error) {
+           console.error("Error saving property: ", error);
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao Salvar',
+                description: 'Não foi possível salvar as informações do imóvel.',
+            });
+        }
     }
 
   return (

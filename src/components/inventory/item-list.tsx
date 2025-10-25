@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { AddItemDialog } from './add-item-dialog';
 
-export function ItemList({ items, onContainerClick, parentContainer, onItemSave, onItemDelete, onItemClone, locations, allItems }: { items: Item[], onContainerClick: (itemId: string) => void; parentContainer?: Item | null, onItemSave: (item: Item) => void, onItemDelete: (itemId: string) => void, onItemClone: (item: Item) => void, locations: Location[], allItems: Item[] }) {
+export function ItemList({ items, onContainerClick, parentContainer, onItemSave, onItemDelete, onItemClone, locations, allItems }: { items: Item[], onContainerClick: (itemId: string) => void; parentContainer?: Item | null, onItemSave: (item: Omit<Item, 'id' | 'ownerId' | 'propertyId'> & { id?: string }) => void, onItemDelete: (itemId: string) => void, onItemClone: (item: Item) => void, locations: Location[], allItems: Item[] }) {
   return (
     <div>
       {items.length === 0 ? (

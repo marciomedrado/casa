@@ -23,7 +23,7 @@ export function ItemBrowser({
   allItems: Item[],
   visibleItems: Item[],
   allLocations: Location[],
-  onItemSave: (item: Item) => void,
+  onItemSave: (item: Omit<Item, 'id' | 'ownerId' | 'propertyId'> & { id?: string }) => void,
   onItemDelete: (itemId: string) => void,
   onItemClone: (item: Item) => void,
   locationName: string,

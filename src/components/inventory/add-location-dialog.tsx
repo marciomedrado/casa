@@ -25,9 +25,10 @@ interface AddLocationDialogProps {
   locations: Location[];
   locationToEdit?: Location;
   onLocationSave: (location: Omit<Location, 'children' | 'propertyId'> & { id?: string }) => void;
+  disabled?: boolean;
 }
 
-export function AddLocationDialog({ children, propertyId, locations, locationToEdit, onLocationSave }: AddLocationDialogProps) {
+export function AddLocationDialog({ children, propertyId, locations, locationToEdit, onLocationSave, disabled = false }: AddLocationDialogProps) {
     const [open, setOpen] = useState(false);
     const [name, setName] = useState('');
     const [parentId, setParentId] = useState<string | null>(null);
@@ -53,6 +54,15 @@ export function AddLocationDialog({ children, propertyId, locations, locationToE
     }, [open, isEditMode, locationToEdit]);
     
     const handleSubmit = () => {
+        if (disabled) {
+            toast({
+                variant: 'destructive',
+                title: 'Limite Atingido',
+                description: 'Você não pode adicionar mais cômodos neste plano.',
+            });
+            return;
+        }
+
         if (!name) {
              toast({
                 variant: 'destructive',
@@ -70,17 +80,15 @@ export function AddLocationDialog({ children, propertyId, locations, locationToE
             type: 'other' // This can be expanded upon later
         });
 
-        toast({
-            title: isEditMode ? "Cômodo Atualizado!" : "Cômodo Adicionado!",
-            description: `"${name}" foi ${isEditMode ? 'atualizado' : 'adicionado'}.`,
-        });
         setOpen(false);
     }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {children}
+        <div className={disabled ? 'cursor-not-allowed' : ''}>
+          {React.cloneElement(children as React.ReactElement, { disabled })}
+        </div>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

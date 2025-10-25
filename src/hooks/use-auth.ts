@@ -1,52 +1,48 @@
-
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import type { User } from '@/lib/types';
-import { MOCK_USER } from '@/lib/data';
-
-const AUTH_KEY = 'casa-organizzata-auth';
+import { useFirebase } from '@/firebase';
+import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { auth, firestore, user, isUserLoading, userError } = useFirebase();
   const router = useRouter();
 
-  useEffect(() => {
+  const login = useCallback(async () => {
+    if (!auth) return;
+    const provider = new GoogleAuthProvider();
     try {
-      const storedAuth = localStorage.getItem(AUTH_KEY);
-      if (storedAuth) {
-        setUser(JSON.parse(storedAuth));
+      const result = await signInWithPopup(auth, provider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential) {
+        const userDocRef = doc(firestore, 'users', result.user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists()) {
+          const isAdm = result.user.email === "marciomedrado@gmail.com";
+          await setDoc(userDocRef, {
+            uid: result.user.uid,
+            displayName: result.user.displayName,
+            email: result.user.email,
+            photoURL: result.user.photoURL,
+            role: isAdm ? 'admin' : 'free',
+            createdAt: serverTimestamp(),
+          });
+        }
       }
+      router.push('/');
     } catch (error) {
-      console.error('Failed to parse auth from localStorage', error);
-    } finally {
-      setLoading(false);
+      console.error('Error during sign-in:', error);
     }
-  }, []);
+  }, [auth, firestore, router]);
 
-  const login = useCallback(() => {
-    setLoading(true);
-    const mockUser: User = {
-        ...MOCK_USER,
-        // Mimic what Firebase user object might have
-        uid: 'mock-user-uid',
-        providerId: 'google.com',
-        photoURL: MOCK_USER.avatar,
-        displayName: MOCK_USER.name,
-    } as User;
-    localStorage.setItem(AUTH_KEY, JSON.stringify(mockUser));
-    setUser(mockUser);
-    setLoading(false);
-    router.push('/');
-  }, [router]);
-
-  const logout = useCallback(() => {
-    localStorage.removeItem(AUTH_KEY);
-    setUser(null);
+  const logout = useCallback(async () => {
+    if (!auth) return;
+    await signOut(auth);
     router.push('/login');
-  }, [router]);
+  }, [auth, router]);
 
-  return { user, login, logout, loading, error: null };
+  return { user, login, logout, loading: isUserLoading, error: userError };
 }

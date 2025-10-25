@@ -27,10 +27,6 @@ import { identifyItem } from '@/ai/flows/identify-item-flow';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
-function generateRandomId(prefix: string) {
-    return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-}
-
 export function AddItemDialog({ 
     children, 
     itemToEdit,
@@ -48,7 +44,7 @@ export function AddItemDialog({
     open?: boolean,
     onOpenChange?: (open: boolean) => void,
     isReadOnly?: boolean,
-    onItemSave: (item: Item) => void,
+    onItemSave: (item: Omit<Item, 'id' | 'ownerId' | 'propertyId'> & { id?: string }) => void,
     locations: Location[],
     allItems: Item[],
 }) {
@@ -173,7 +169,7 @@ export function AddItemDialog({
                     setLocationId(initialParentContainer.locationId);
                     setParentId(initialParentContainer.id);
                 } else if (flattenedLocations.length > 0) {
-                    setLocationId(null);
+                    setLocationId(flattenedLocations[0]?.id || null);
                     setParentId(null);
                 }
             }
@@ -413,13 +409,8 @@ export function AddItemDialog({
 
         const finalPath = buildFullPath(locationId, parentId, subContainer);
 
-        const baseItem = isEditMode && itemToEdit ? itemToEdit : {
-            id: generateRandomId('item'),
-            propertyId: parentContainer?.propertyId || (locationMap.get(locationId)?.propertyId) || 'prop-1',
-        };
-
-        const finalItem: Item = {
-            ...baseItem,
+        const finalItem = {
+            id: itemToEdit?.id,
             name,
             description,
             quantity: isContainer ? 1 : quantity,
@@ -436,11 +427,6 @@ export function AddItemDialog({
         };
 
         onItemSave(finalItem);
-
-        toast({
-            title: isEditMode ? "Item Atualizado!" : "Item Adicionado!",
-            description: `"${name}" foi ${isEditMode ? 'atualizado' : 'adicionado'} no seu inventário.`,
-        });
         setOpen(false);
     }
 
@@ -756,5 +742,3 @@ export function AddItemDialog({
     </Dialog>
   );
 }
-
-    

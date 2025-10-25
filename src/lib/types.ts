@@ -1,7 +1,16 @@
-
 import type { User as FirebaseUser } from 'firebase/auth';
 
-export type User = FirebaseUser;
+export type UserRole = 'admin' | 'vip' | 'free';
+
+export interface UserProfile {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  role: UserRole;
+}
+
+export type User = FirebaseUser & UserProfile;
 
 export type Property = {
   id: string;
@@ -9,6 +18,7 @@ export type Property = {
   address: string;
   imageUrl: string;
   imageHint: string;
+  ownerId: string;
 };
 
 export type Location = {
@@ -42,4 +52,5 @@ export type Item = {
   propertyId: string;
   locationPath: string[];
   subContainer?: SubContainer | null; // Which door/drawer it's in
+  ownerId: string;
 };

@@ -32,6 +32,7 @@ export function AppLayout({
   searchQuery,
   setSearchQuery,
   viewMode,
+  isAddLocationDisabled,
 }: {
   children: React.ReactNode;
   pageTitle: string;
@@ -44,6 +45,7 @@ export function AppLayout({
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   viewMode: 'items' | 'all-locations' | 'all-containers';
+  isAddLocationDisabled?: boolean;
 }) {
   return (
     <SidebarProvider>
@@ -76,7 +78,7 @@ export function AppLayout({
           </SidebarGroup>
           <SidebarGroup>
             <SidebarGroupLabel>Cômodos</SidebarGroupLabel>
-             <AddLocationDialog locations={allRawLocations} propertyId={propertyId} onLocationSave={onLocationSave}>
+             <AddLocationDialog locations={allRawLocations} propertyId={propertyId} onLocationSave={onLocationSave} disabled={isAddLocationDisabled}>
                 <SidebarGroupAction>
                     <PlusCircle />
                 </SidebarGroupAction>

@@ -24,19 +24,14 @@ import { useToast } from '@/hooks/use-toast';
 interface PropertyCardProps {
   property: Property;
   onDelete: (id: string) => void;
-  onPropertySave: (property: Omit<Property, 'id' | 'imageUrl' | 'imageHint'> & { id?: string }) => void;
 }
 
 
-export function PropertyCard({ property, onDelete, onPropertySave }: PropertyCardProps) {
+export function PropertyCard({ property, onDelete }: PropertyCardProps) {
   const { toast } = useToast();
 
   const handleDelete = () => {
     onDelete(property.id);
-    toast({
-      title: "Imóvel Excluído!",
-      description: `"${property.name}" foi removido.`,
-    });
   }
 
   return (
@@ -49,7 +44,7 @@ export function PropertyCard({ property, onDelete, onPropertySave }: PropertyCar
             <p className="text-sm text-muted-foreground">{property.address}</p>
         </div>
         <div className="flex gap-2">
-            <AddPropertyDialog propertyToEdit={property} onPropertySave={onPropertySave}>
+            <AddPropertyDialog propertyToEdit={property}>
               <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
                   <Pencil className="h-4 w-4" />
                   <span className="sr-only">Editar Imóvel</span>

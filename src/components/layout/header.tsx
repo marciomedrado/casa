@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, Search, Upload, Download, Settings, LogOut } from 'lucide-react';
+import { Home, Search, Upload, Download, Settings, LogOut, ShieldCheck } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,9 +17,12 @@ import { Input } from '@/components/ui/input';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { getProperties, getLocations, getItems, restoreFromBackup } from '@/lib/storage';
 import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '../ui/skeleton';
+import { useFirebase, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/types';
+
 
 export function Header({ 
   showSidebarTrigger = false,
@@ -32,78 +35,25 @@ export function Header({
 }) {
   const { toast } = useToast();
   const { user, logout, loading } = useAuth();
+  const { firestore } = useFirebase();
   const restoreRef = useRef<HTMLInputElement>(null);
 
+  const userProfileRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
+
   const handleBackup = () => {
-    const backupData = {
-      properties: getProperties(),
-      locations: getLocations(),
-      items: getItems(),
-    };
-
-    const jsonString = JSON.stringify(backupData, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", "casa-organizzata-backup.json");
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
     toast({
-        title: "Backup Concluído",
-        description: "Seus dados foram exportados para um arquivo JSON."
+        title: "Funcionalidade em breve",
+        description: "A exportação de dados estará disponível em futuras versões."
     });
   }
 
   const handleRestoreClick = () => {
-    restoreRef.current?.click();
+     toast({
+        title: "Funcionalidade em breve",
+        description: "A importação de dados estará disponível em futuras versões."
+    });
   }
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            const content = e.target?.result as string;
-            restoreFromBackup(content);
-
-            toast({
-                title: "Restauração Concluída",
-                description: "Seus dados foram importados com sucesso. A página será atualizada.",
-            });
-
-            setTimeout(() => {
-                window.location.reload();
-            }, 2000);
-
-        } catch (error) {
-             console.error("Error processing backup file:", error);
-            toast({
-                title: "Erro na Restauração",
-                description: "O arquivo de backup é inválido ou está corrompido.",
-                variant: "destructive"
-            });
-        }
-    };
-    reader.onerror = () => {
-        console.error("Error reading file:", reader.error);
-        toast({
-            title: "Erro na Restauração",
-            description: "Não foi possível ler o arquivo de backup.",
-            variant: "destructive"
-        });
-    };
-    reader.readAsText(file);
-    
-    // Reset file input
-    if(restoreRef.current) restoreRef.current.value = "";
-  };
-
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-card px-4 md:px-6">
@@ -149,17 +99,25 @@ export function Header({
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>{user.displayName || user.email}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {userProfile?.role === 'admin' && (
+                    <Link href="/admin" passHref>
+                        <DropdownMenuItem>
+                            <ShieldCheck className="mr-2 h-4 w-4" />
+                            <span>Admin</span>
+                        </DropdownMenuItem>
+                    </Link>
+                )}
                 <Link href="/settings" passHref>
                 <DropdownMenuItem>
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Configurações</span>
                 </DropdownMenuItem>
                 </Link>
-                <DropdownMenuItem onClick={handleBackup}>
+                <DropdownMenuItem onClick={handleBackup} disabled>
                 <Download className="mr-2 h-4 w-4" />
                 <span>Fazer Backup</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleRestoreClick}>
+                <DropdownMenuItem onClick={handleRestoreClick} disabled>
                     <Upload className="mr-2 h-4 w-4" />
                     <span>Restaurar Backup</span>
                 </DropdownMenuItem>
@@ -175,7 +133,6 @@ export function Header({
           type="file" 
           ref={restoreRef}
           accept=".json"
-          onChange={handleFileChange}
           className="hidden" 
         />
       </div>
