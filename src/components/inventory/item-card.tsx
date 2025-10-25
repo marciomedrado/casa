@@ -74,19 +74,12 @@ export function ItemCard({ item, onContainerClick, onItemSave, onItemDelete, onI
           item.isContainer ? "cursor-pointer" : "cursor-default"
         )}
       >
-        <CardHeader className="flex flex-row items-start justify-start gap-4 p-4">
+        <CardHeader className="flex flex-row items-center justify-end gap-4 p-4">
            {item.isContainer && (
-            <div className="flex items-center justify-center bg-secondary rounded-md h-10 w-10 shrink-0">
+            <div className="flex items-center justify-center bg-secondary rounded-md h-10 w-10 shrink-0 mr-auto">
               <PackageOpen className="h-6 w-6 text-muted-foreground" />
             </div>
           )}
-          <div className="flex-grow min-w-0">
-             <CardTitle className="text-lg line-clamp-1">{item.name}</CardTitle>
-             <div className="flex items-start text-sm text-muted-foreground mt-1">
-                <MapPin className="h-4 w-4 mr-1.5 shrink-0 mt-0.5" />
-                <span className="truncate">{item.locationPath?.join(' / ') || ''}</span>
-            </div>
-          </div>
           <div className="flex gap-1">
              {!item.isContainer && (
                 <Button
@@ -157,6 +150,11 @@ export function ItemCard({ item, onContainerClick, onItemSave, onItemDelete, onI
           </div>
         </CardHeader>
         <CardContent className="p-4 pt-0 flex-1">
+          <CardTitle className="text-lg line-clamp-1 mb-1">{item.name}</CardTitle>
+          <div className="flex items-start text-sm text-muted-foreground mb-2">
+            <MapPin className="h-4 w-4 mr-1.5 shrink-0 mt-0.5" />
+            <span className="truncate">{item.locationPath?.join(' / ') || ''}</span>
+          </div>
           <CardDescription className="text-sm line-clamp-2">{item.description}</CardDescription>
         </CardContent>
         <CardFooter className="p-4 pt-0 flex flex-wrap gap-2">
