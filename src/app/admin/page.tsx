@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 
 export default function AdminPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isLoggingIn } = useAuth();
   const { firestore } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
@@ -28,10 +28,10 @@ export default function AdminPage() {
   const { data: users, isLoading: usersLoading } = useCollection<UserProfile>(usersQuery);
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!authLoading && !isLoggingIn && !user) {
       router.push('/login');
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, isLoggingIn, router]);
 
   useEffect(() => {
     if (!profileLoading && userProfile && userProfile.role !== 'admin') {

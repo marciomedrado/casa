@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function Dashboard() {
-  const { user, loading } = useAuth();
+  const { user, loading, isLoggingIn } = useAuth();
   const { firestore } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
@@ -36,10 +36,10 @@ export default function Dashboard() {
   const [isAddDisabled, setIsAddDisabled] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !isLoggingIn && !user) {
       router.push('/login');
     }
-  }, [user, loading, router]);
+  }, [user, loading, isLoggingIn, router]);
   
   useEffect(() => {
     if (userProfile && properties) {

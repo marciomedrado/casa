@@ -21,7 +21,7 @@ type ViewMode = 'all-locations' | 'items' | 'all-containers';
 export default function PropertyPage() {
   const params = useParams();
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isLoggingIn } = useAuth();
   const propertyId = params.propertyId as string;
   const { toast } = useToast();
   const { firestore } = useFirebase();
@@ -54,10 +54,10 @@ export default function PropertyPage() {
   const [isAddLocationDisabled, setIsAddLocationDisabled] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!authLoading && !isLoggingIn && !user) {
       router.push('/login');
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, isLoggingIn, router]);
 
   useEffect(() => {
     if (user && property && property.ownerId !== user.uid) {

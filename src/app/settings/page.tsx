@@ -13,14 +13,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const { user, loading } = useAuth();
+  const { user, loading, isLoggingIn } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !isLoggingIn && !user) {
       router.push('/login');
     }
-  }, [user, loading, router]);
+  }, [user, loading, isLoggingIn, router]);
 
   if (loading || !user) {
     return (
