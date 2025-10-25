@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,9 +22,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
-export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, onItemDelete, locations, allItems }: { item: Item, onContainerClick: (itemId: string) => void, parentContainer?: Item | null, onItemSave: (item: Item) => void, onItemDelete: (itemId: string) => void, locations: Location[], allItems: Item[] }) {
+export function ItemCard({ item, onContainerClick, onItemSave, onItemDelete, locations, allItems }: { item: Item, onContainerClick: (itemId: string) => void, parentContainer?: Item | null, onItemSave: (item: Item) => void, onItemDelete: (itemId: string) => void, locations: Location[], allItems: Item[] }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+
+  const parentContainer = allItems.find(i => i.id === item.parentId) ?? null;
 
   const handleCardClick = (e: React.MouseEvent) => {
     // Stop propagation if the click is on any button inside the card.

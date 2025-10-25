@@ -71,14 +71,15 @@ export function AddItemDialog({
 
     const isEditMode = itemToEdit !== undefined;
 
-    const { flattenedLocations, locationMap } = useMemo(() => {
+    const { flattenedLocations, locationMap, itemMap } = useMemo(() => {
         const flatList: { id: string; name: string; fullPath: string; level: number }[] = [];
-        const map = new Map<string, {name: string, parentId: string | null}>();
+        const locMap = new Map<string, {name: string, parentId: string | null}>();
+        const iMap = new Map<string, Item>(allItems.map(item => [item.id, item]));
 
         const flatten = (locations: Location[], level: number = 0, parentPath: string[] = []) => {
             if (!locations) return;
             for (const loc of locations) {
-                map.set(loc.id, { name: loc.name, parentId: loc.parentId });
+                locMap.set(loc.id, { name: loc.name, parentId: loc.parentId });
                 const currentPath = [...parentPath, loc.name];
                 flatList.push({ id: loc.id, name: loc.name, fullPath: currentPath.join(' / '), level });
                 if (loc.children && loc.children.length > 0) {
@@ -87,11 +88,13 @@ export function AddItemDialog({
             }
         };
         flatten(locations || []);
-        return { flattenedLocations: flatList, locationMap: map };
-    }, [locations]);
+        return { flattenedLocations: flatList, locationMap: locMap, itemMap: iMap };
+    }, [locations, allItems]);
 
-    const buildFullPath = (locId: string | null, containerId: string | null) => {
+    const buildFullPath = (locId: string | null, containerId: string | null): string[] => {
         let path: string[] = [];
+        
+        // 1. Build path from locations
         let currentLocId = locId;
         while(currentLocId && locationMap.has(currentLocId)) {
             const loc = locationMap.get(currentLocId)!;
@@ -99,14 +102,16 @@ export function AddItemDialog({
             currentLocId = loc.parentId;
         }
 
-        if (containerId) {
-            const container = allItems.find(i => i.id === containerId);
-            if (container) {
-                path.push(container.name);
-            }
+        // 2. Build path from containers
+        let containerPath: string[] = [];
+        let currentContainerId = containerId;
+        while(currentContainerId && itemMap.has(currentContainerId)) {
+            const container = itemMap.get(currentContainerId)!;
+            containerPath.unshift(container.name);
+            currentContainerId = container.parentId;
         }
-        
-        return path;
+
+        return [...path, ...containerPath];
     };
 
 
@@ -338,7 +343,7 @@ export function AddItemDialog({
             <Label htmlFor="location" className="text-right">
               Cômodo
             </Label>
-            <Select onValueChange={handleLocationChange} value={locationId ?? ''} disabled={isReadOnly || (!isEditMode && !!initialParentContainer)}>
+            <Select onValueChange={handleLocationChange} value={locationId ?? ''} disabled={isReadOnly}>
                 <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Selecione um cômodo" />
                 </SelectTrigger>
@@ -357,7 +362,7 @@ export function AddItemDialog({
                 <Label htmlFor="parentContainer" className="text-right">
                 Container
                 </Label>
-                <Select onValueChange={(value) => handleParentContainerChange(value === 'null' ? null : value)} value={parentId ?? 'null'} disabled={isReadOnly || !locationId || (!isEditMode && !!initialParentContainer)}>
+                <Select onValueChange={(value) => handleParentContainerChange(value === 'null' ? null : value)} value={parentId ?? 'null'} disabled={isReadOnly || !locationId}>
                     <SelectTrigger className="col-span-3">
                         <SelectValue placeholder="Selecione um container (opcional)" />
                     </SelectTrigger>
