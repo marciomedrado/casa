@@ -54,6 +54,15 @@ export default function PropertyPage() {
     }
   };
 
+  const handleItemDelete = (itemId: string) => {
+    storage.deleteItem(itemId);
+    setAllItems(prev => prev.filter(i => i.id !== itemId));
+    toast({
+      title: "Item Excluído!",
+      description: `O item foi removido com sucesso.`,
+    });
+  }
+
   const handleLocationSave = (locationToSave: Omit<Location, 'children' | 'propertyId'> & { id?: string }) => {
     const savedLocation = storage.saveLocation(locationToSave, propertyId);
     const locationExists = allPropertyLocations.some(l => l.id === savedLocation.id);
@@ -183,6 +192,7 @@ export default function PropertyPage() {
             visibleItems={filteredItems}
             allLocations={locationTree}
             onItemSave={handleItemSave}
+            onItemDelete={handleItemDelete}
             locationName={selectedLocationName}
         />
       )}

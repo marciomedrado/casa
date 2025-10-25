@@ -16,12 +16,14 @@ export function ItemBrowser({
   visibleItems,
   allLocations,
   onItemSave, // Receive the save handler
+  onItemDelete,
   locationName,
 }: { 
   allItems: Item[],
   visibleItems: Item[],
   allLocations: Location[],
   onItemSave: (item: Item) => void, // Define the prop type
+  onItemDelete: (itemId: string) => void,
   locationName: string,
 }) {
   const [currentContainerId, setCurrentContainerId] = useState<string | null>(null);
@@ -105,7 +107,7 @@ export function ItemBrowser({
         {icon}
         <h3 className="text-lg font-semibold">{title}</h3>
       </div>
-      <ItemList items={items} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={onItemSave} locations={allLocations} />
+      <ItemList items={items} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={onItemSave} onItemDelete={onItemDelete} locations={allLocations} />
     </div>
   );
   
@@ -179,7 +181,7 @@ export function ItemBrowser({
               <>
                 <Separator className="my-8" />
                 <h3 className="text-lg font-semibold mb-4">Itens Soltos</h3>
-                <ItemList items={looseItems} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={onItemSave} locations={allLocations} />
+                <ItemList items={looseItems} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={onItemSave} onItemDelete={onItemDelete} locations={allLocations} />
               </>
             )}
             {
@@ -201,7 +203,7 @@ export function ItemBrowser({
           </>
         ) : (
           // Root view
-          <ItemList items={looseItems} onContainerClick={handleContainerClick} onItemSave={onItemSave} locations={allLocations} />
+          <ItemList items={looseItems} onContainerClick={handleContainerClick} onItemSave={onItemSave} onItemDelete={onItemDelete} locations={allLocations} />
         )}
       </div>
     </div>

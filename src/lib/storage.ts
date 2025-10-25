@@ -153,3 +153,31 @@ export function saveItem(item: Item, propertyId: string): Item {
     saveToStorage(ITEMS_KEY, updatedItems);
     return newItem;
 }
+
+export function deleteItem(itemId: string): void {
+    let items = getFromStorage<Item>(ITEMS_KEY);
+    
+    // Find the item to delete
+    const itemToDelete = items.find(i => i.id === itemId);
+    if (!itemToDelete) return;
+
+    let idsToDelete = [itemId];
+
+    // If the item is a container, find all children recursively
+    if (itemToDelete.isContainer) {
+        const findChildren = (parentId: string) => {
+            const children = items.filter(i => i.parentId === parentId);
+            for (const child of children) {
+                idsToDelete.push(child.id);
+                if (child.isContainer) {
+                    findChildren(child.id);
+                }
+            }
+        };
+        findChildren(itemId);
+    }
+    
+    // Filter out the item and all its children
+    items = items.filter(i => !idsToDelete.includes(i.id));
+    saveToStorage(ITEMS_KEY, items);
+}

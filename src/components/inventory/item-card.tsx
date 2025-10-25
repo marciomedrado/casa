@@ -1,17 +1,27 @@
 
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Item, Location } from '@/lib/types';
-import { MapPin, Pencil, PackageOpen, Eye, DoorOpen, Rows3 } from 'lucide-react';
+import { MapPin, Pencil, PackageOpen, Eye, DoorOpen, Rows3, Trash2 } from 'lucide-react';
 import { AddItemDialog } from './add-item-dialog';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
-export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, locations }: { item: Item, onContainerClick: (itemId: string) => void, parentContainer?: Item | null, onItemSave: (item: Item) => void, locations: Location[] }) {
+export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, onItemDelete, locations }: { item: Item, onContainerClick: (itemId: string) => void, parentContainer?: Item | null, onItemSave: (item: Item) => void, onItemDelete: (itemId: string) => void, locations: Location[] }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
@@ -93,46 +103,77 @@ export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, 
           item.isContainer ? "cursor-pointer" : "cursor-default"
         )}
       >
-        <CardContent className="p-4 flex-1 relative">
-           <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              {!item.isContainer && (
-                 <Button
-                    variant="secondary"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsViewDialogOpen(true);
-                    }}
-                    className="rounded-full h-8 w-8"
+        <CardHeader className="flex flex-row items-start justify-between gap-4 p-4">
+             <div className="flex-1 min-w-0">
+                 {item.isContainer && (
+                  <div 
+                    onClick={(e) => { e.stopPropagation(); onContainerClick(item.id); }}
+                    className="flex items-center gap-1.5 rounded-full bg-black/50 px-2 py-1 text-xs text-white cursor-pointer w-fit mb-2"
                   >
-                    <Eye className="h-4 w-4" />
-                    <span className="sr-only">Visualizar Item</span>
-                  </Button>
-              )}
-              <Button
-                  data-edit-button
-                  variant="secondary"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsEditDialogOpen(true);
-                  }}
-                  className="rounded-full h-8 w-8"
-                >
-                  <Pencil className="h-4 w-4" />
-                  <span className="sr-only">Editar Item</span>
-                </Button>
+                    <PackageOpen className="h-3 w-3" />
+                    <span>Container</span>
+                  </div>
+                )}
+                <CardTitle className="text-lg line-clamp-1">{item.name}</CardTitle>
+             </div>
+             <div className="flex gap-2">
+                 {!item.isContainer && (
+                     <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsViewDialogOpen(true);
+                        }}
+                        className="rounded-full h-8 w-8"
+                      >
+                        <Eye className="h-4 w-4" />
+                        <span className="sr-only">Visualizar Item</span>
+                      </Button>
+                  )}
+                  <Button
+                      data-edit-button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsEditDialogOpen(true);
+                      }}
+                      className="rounded-full h-8 w-8"
+                    >
+                      <Pencil className="h-4 w-4" />
+                      <span className="sr-only">Editar Item</span>
+                    </Button>
+                   <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                         <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => e.stopPropagation()}
+                            className="rounded-full h-8 w-8 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Excluir Item</span>
+                          </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                          <AlertDialogHeader>
+                              <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                  Esta ação não pode ser desfeita. Isso excluirá permanentemente o item
+                                  <span className="font-semibold"> {item.name}</span>.
+                                  Se for um container, todos os itens dentro dele também serão excluídos.
+                              </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={(e) => { e.stopPropagation(); onItemDelete(item.id);}} className="bg-destructive hover:bg-destructive/90">Excluir</AlertDialogAction>
+                          </AlertDialogFooter>
+                      </AlertDialogContent>
+                  </AlertDialog>
             </div>
-             {item.isContainer && (
-              <div 
-                onClick={(e) => { e.stopPropagation(); onContainerClick(item.id); }}
-                className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-black/50 px-2 py-1 text-xs text-white cursor-pointer"
-              >
-                <PackageOpen className="h-3 w-3" />
-                <span>Container</span>
-              </div>
-            )}
-          <CardTitle className="text-lg mb-1 line-clamp-1 pr-10">{item.name}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 pt-0 flex-1">
           <div className="flex items-center text-sm text-muted-foreground mb-1">
               <MapPin className="h-4 w-4 mr-2 shrink-0" />
               <span className="truncate">{locationDisplayPath()}</span>
@@ -144,7 +185,7 @@ export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, 
           {item.tags.slice(0, 3).map((tag) => (
             <Badge key={tag} variant="secondary">{tag}</Badge>
           ))}
-          <Badge variant="outline">Qtd: {item.quantity}</Badge>
+          {!item.isContainer && <Badge variant="outline">Qtd: {item.quantity}</Badge>}
         </CardFooter>
       </Card>
     </>
