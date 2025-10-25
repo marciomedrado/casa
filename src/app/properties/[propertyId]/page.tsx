@@ -9,12 +9,14 @@ import { notFound, useParams } from 'next/navigation';
 import type { Location, Item } from '@/lib/types';
 import * as storage from '@/lib/storage';
 import { LocationBrowser } from '@/components/inventory/location-browser';
+import { useToast } from '@/hooks/use-toast';
 
 type ViewMode = 'all-locations' | 'items';
 
 export default function PropertyPage() {
   const params = useParams();
   const propertyId = params.propertyId as string;
+  const { toast } = useToast();
   
   const [property, setProperty] = useState<Item | undefined>(undefined);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
@@ -60,6 +62,35 @@ export default function PropertyPage() {
     } else {
       setAllPropertyLocations(prev => [...prev, savedLocation as Location]);
     }
+  };
+
+  const handleLocationDelete = (locationId: string) => {
+    const children = allPropertyLocations.filter(l => l.parentId === locationId);
+    if (children.length > 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Exclusão não permitida',
+        description: 'Este cômodo contém outros cômodos dentro dele e não pode ser excluído.',
+      });
+      return;
+    }
+    
+    const itemsInLocation = allItems.filter(item => item.locationId === locationId);
+    if (itemsInLocation.length > 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Exclusão não permitida',
+        description: 'Este cômodo contém itens e não pode ser excluído.',
+      });
+      return;
+    }
+
+    storage.deleteLocation(locationId);
+    setAllPropertyLocations(prev => prev.filter(l => l.id !== locationId));
+    toast({
+      title: "Cômodo Excluído!",
+      description: `O cômodo foi removido com sucesso.`,
+    });
   };
 
   const getSubLocationIds = (locationId: string): string[] => {
@@ -140,7 +171,11 @@ export default function PropertyPage() {
       {viewMode === 'all-locations' && !searchQuery ? (
         <LocationBrowser 
             locations={rootLocations}
+            allRawLocations={allPropertyLocations}
+            propertyId={property.id}
             onLocationSelect={(id) => handleLocationSelect(id)}
+            onLocationSave={handleLocationSave}
+            onLocationDelete={handleLocationDelete}
         />
       ) : (
         <ItemBrowser 

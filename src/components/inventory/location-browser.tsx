@@ -6,10 +6,18 @@ import type { Location } from '@/lib/types';
 
 export function LocationBrowser({ 
     locations,
-    onLocationSelect
+    allRawLocations,
+    propertyId,
+    onLocationSelect,
+    onLocationSave,
+    onLocationDelete
 }: { 
     locations: Location[],
-    onLocationSelect: (id: string) => void
+    allRawLocations: Location[],
+    propertyId: string;
+    onLocationSelect: (id: string) => void,
+    onLocationSave: (location: Omit<Location, 'children' | 'propertyId'> & { id?: string }) => void;
+    onLocationDelete: (id: string) => void;
 }) {
   return (
     <div>
@@ -22,7 +30,15 @@ export function LocationBrowser({
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {locations.map((location) => (
-            <LocationCard key={location.id} location={location} onLocationSelect={onLocationSelect} />
+            <LocationCard 
+                key={location.id} 
+                location={location} 
+                allRawLocations={allRawLocations}
+                propertyId={propertyId}
+                onLocationSelect={onLocationSelect}
+                onLocationSave={onLocationSave}
+                onLocationDelete={onLocationDelete}
+             />
           ))}
         </div>
       )}

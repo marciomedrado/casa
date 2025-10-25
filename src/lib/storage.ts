@@ -118,6 +118,11 @@ export function saveLocation(location: Omit<Location, 'children' | 'propertyId'>
     return newLocation as Location;
 }
 
+export function deleteLocation(locationId: string): void {
+    const locations = getFromStorage<Omit<Location, 'children'>>(LOCATIONS_KEY).filter(l => l.id !== locationId);
+    saveToStorage(LOCATIONS_KEY, locations);
+}
+
 // --- Items API ---
 export function getItems(propertyId: string): Item[] {
     const allItems = getFromStorage<Item>(ITEMS_KEY);
