@@ -1,48 +1,44 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import type { User } from '@/lib/types';
-import { MOCK_USER } from '@/lib/data';
-
-const AUTH_KEY = 'casa-organizzata-auth';
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+} from 'firebase/auth';
+import { useUser, useFirebase } from '@/firebase';
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { auth } = useFirebase();
+  const { user, isUserLoading, userError } = useUser();
   const router = useRouter();
 
-  useEffect(() => {
+  const login = useCallback(async () => {
+    const provider = new GoogleAuthProvider();
     try {
-      const storedAuth = localStorage.getItem(AUTH_KEY);
-      if (storedAuth) {
-        const authData = JSON.parse(storedAuth);
-        if (authData.isAuthenticated) {
-          setUser(MOCK_USER);
-        }
-      }
+      await signInWithPopup(auth, provider);
+      router.push('/');
     } catch (error) {
-        console.error("Failed to parse auth data from localStorage", error);
+      console.error("Erro no login com Google:", error);
     }
-    setLoading(false);
-  }, []);
+  }, [auth, router]);
 
-  const login = useCallback(() => {
-    setLoading(true);
-    localStorage.setItem(AUTH_KEY, JSON.stringify({ isAuthenticated: true }));
-    setUser(MOCK_USER);
-    router.push('/');
-    setLoading(false);
-  }, [router]);
+  const logout = useCallback(async () => {
+    try {
+      await signOut(auth);
+      router.push('/login');
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+    }
+  }, [auth, router]);
 
-  const logout = useCallback(() => {
-    setLoading(true);
-    localStorage.removeItem(AUTH_KEY);
-    setUser(null);
-    router.push('/login');
-    setLoading(false);
-  }, [router]);
-
-  return { user, login, logout, loading };
+  return { 
+    user, 
+    login, 
+    logout, 
+    loading: isUserLoading,
+    error: userError 
+  };
 }

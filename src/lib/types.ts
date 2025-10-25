@@ -1,10 +1,7 @@
-import type { LucideIcon } from 'lucide-react';
 
-export type User = {
-  name: string;
-  avatar: string;
-  email: string;
-};
+import type { User as FirebaseUser } from 'firebase/auth';
+
+export type User = FirebaseUser;
 
 export type Property = {
   id: string;
@@ -46,4 +43,3 @@ export type Item = {
   locationPath: string[];
   subContainer?: SubContainer | null; // Which door/drawer it's in
 };
-
