@@ -4,7 +4,7 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Item, Location } from '@/lib/types';
-import { MapPin, Pencil, PackageOpen, Eye, DoorOpen, Rows3, Trash2 } from 'lucide-react';
+import { MapPin, Pencil, PackageOpen, Eye, DoorOpen, Rows3, Trash2, Box } from 'lucide-react';
 import { AddItemDialog } from './add-item-dialog';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
@@ -57,17 +57,12 @@ export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, 
     );
   }
 
-  // Get the base location path, excluding any container/sub-container names
+  // Get the base location path, excluding any sub-container names
   const locationDisplayPath = () => {
       if (!item.locationPath) return '';
       const path = [...item.locationPath];
       if (item.subContainer) {
           path.pop(); // remove sub-container
-          if (item.parentId) {
-            path.pop(); // remove parent container
-          }
-      } else if (item.parentId) {
-         path.pop(); // remove parent container
       }
       return path.join(' / ');
   }
@@ -175,7 +170,7 @@ export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, 
         <CardContent className="p-4 pt-0 flex-1">
           <CardTitle className="text-lg line-clamp-1 mb-2">{item.name}</CardTitle>
           <div className="flex items-center text-sm text-muted-foreground mb-1">
-              <MapPin className="h-4 w-4 mr-2 shrink-0" />
+              {item.parentId ? <Box className="h-4 w-4 mr-2 shrink-0" /> : <MapPin className="h-4 w-4 mr-2 shrink-0" />}
               <span className="truncate">{locationDisplayPath()}</span>
           </div>
           {subContainerText()}
