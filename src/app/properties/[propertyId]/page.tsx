@@ -15,7 +15,7 @@ function generateRandomId(prefix: string) {
 
 export default function PropertyPage({ params }: { params: { propertyId: string } }) {
   // Directly use params.propertyId as it's available on both server and client
-  const { propertyId } = params;
+  const { propertyId } = React.use(params);
   const property = useMemo(() => MOCK_PROPERTIES.find(p => p.id === propertyId), [propertyId]);
   
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
