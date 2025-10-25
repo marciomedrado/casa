@@ -11,7 +11,7 @@ import * as storage from '@/lib/storage';
 import { LocationBrowser } from '@/components/inventory/location-browser';
 import { useToast } from '@/hooks/use-toast';
 
-type ViewMode = 'all-locations' | 'items';
+type ViewMode = 'all-locations' | 'items' | 'all-containers';
 
 export default function PropertyPage() {
   const params = useParams();
@@ -128,8 +128,12 @@ export default function PropertyPage() {
   const { filteredItems, selectedLocationName } = useMemo(() => {
     let items = allItems;
     let selectedLocationName = property?.name ?? 'Todos os Itens';
+    
     if (viewMode === 'all-locations') {
         selectedLocationName = property?.name ?? 'Todos os Locais';
+    } else if (viewMode === 'all-containers') {
+        items = allItems.filter(item => item.isContainer);
+        selectedLocationName = 'Todos os Containers';
     }
 
 
@@ -164,6 +168,8 @@ export default function PropertyPage() {
     return null;
   }
 
+  const shouldShowLocationBrowser = viewMode === 'all-locations' && !searchQuery;
+
   return (
     <AppLayout 
       pageTitle={property.name} 
@@ -177,7 +183,7 @@ export default function PropertyPage() {
       setSearchQuery={setSearchQuery}
       viewMode={viewMode}
     >
-      {viewMode === 'all-locations' && !searchQuery ? (
+      {shouldShowLocationBrowser ? (
         <LocationBrowser 
             locations={rootLocations}
             allRawLocations={allPropertyLocations}
