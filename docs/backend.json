@@ -186,39 +186,21 @@
     ]
   },
   "firestore": {
-     "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "entityName": "UserProfile",
-          "schema": { "$ref": "#/entities/UserProfile" },
-          "description": "Stores user profiles and roles."
-        }
-      },
-      {
-        "path": "/properties/{propertyId}",
-        "definition": {
-          "entityName": "Property",
-          "schema": { "$ref": "#/entities/Property" },
-          "description": "Stores property information."
-        }
-      },
-      {
-        "path": "/properties/{propertyId}/locations/{locationId}",
-        "definition": {
-          "entityName": "Location",
-          "schema": { "$ref": "#/entities/Location" },
-          "description": "Sub-collection for locations within a property."
-        }
-      },
-      {
-        "path": "/properties/{propertyId}/items/{itemId}",
-        "definition": {
-          "entityName": "Item",
-          "schema": { "$ref": "#/entities/Item" },
-          "description": "Sub-collection for items within a property."
-        }
-      }
-    ]
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Stores user profiles and roles."
+    },
+    "/properties/{propertyId}": {
+      "schema": { "$ref": "#/entities/Property" },
+      "description": "Stores property information."
+    },
+    "/properties/{propertyId}/locations/{locationId}": {
+      "schema": { "$ref": "#/entities/Location" },
+      "description": "Sub-collection for locations within a property."
+    },
+    "/properties/{propertyId}/items/{itemId}": {
+      "schema": { "$ref": "#/entities/Item" },
+      "description": "Sub-collection for items within a property."
+    }
   }
 }
