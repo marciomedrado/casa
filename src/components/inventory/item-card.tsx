@@ -10,7 +10,6 @@ import { AddItemDialog } from './add-item-dialog';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
-import Image from 'next/image';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -75,32 +74,29 @@ export function ItemCard({ item, onContainerClick, onItemSave, onItemDelete, onI
           item.isContainer ? "cursor-pointer" : "cursor-default"
         )}
       >
-        <CardHeader className="p-0 relative">
-          <div 
-            onClick={item.isContainer ? undefined : () => setIsViewDialogOpen(true)}
-            className={cn("relative h-40 w-full", !item.isContainer && "cursor-pointer")}
-          >
-             <Image
-              src={item.imageUrl}
-              alt={item.name}
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className="object-cover group-hover:scale-105 transition-transform"
-              data-ai-hint={item.imageHint}
-            />
-            <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors" />
+        <CardHeader className="flex flex-row items-start justify-start gap-4 p-4">
+           {item.isContainer && (
+            <div className="flex items-center justify-center bg-secondary rounded-md h-10 w-10 shrink-0">
+              <PackageOpen className="h-6 w-6 text-muted-foreground" />
+            </div>
+          )}
+          <div className="flex-grow min-w-0">
+             <CardTitle className="text-lg line-clamp-1">{item.name}</CardTitle>
+             <div className="flex items-start text-sm text-muted-foreground mt-1">
+                <MapPin className="h-4 w-4 mr-1.5 shrink-0 mt-0.5" />
+                <span className="truncate">{item.locationPath?.join(' / ') || ''}</span>
+            </div>
           </div>
-
-          <div className="absolute top-2 right-2 flex gap-1">
+          <div className="flex gap-1">
              {!item.isContainer && (
                 <Button
-                  variant="secondary"
+                  variant="ghost"
                   size="icon"
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsViewDialogOpen(true);
                   }}
-                  className="rounded-full h-8 w-8 bg-black/50 text-white hover:bg-black/70"
+                  className="rounded-full h-8 w-8"
                 >
                   <Eye className="h-4 w-4" />
                   <span className="sr-only">Visualizar Item</span>
@@ -108,25 +104,25 @@ export function ItemCard({ item, onContainerClick, onItemSave, onItemDelete, onI
               )}
               <Button
                   data-edit-button
-                  variant="secondary"
+                  variant="ghost"
                   size="icon"
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsEditDialogOpen(true);
                   }}
-                  className="rounded-full h-8 w-8 bg-black/50 text-white hover:bg-black/70"
+                  className="rounded-full h-8 w-8"
                 >
                   <Pencil className="h-4 w-4" />
                   <span className="sr-only">Editar Item</span>
                 </Button>
               <Button
-                  variant="secondary"
+                  variant="ghost"
                   size="icon"
                   onClick={(e) => {
                       e.stopPropagation();
                       onItemClone(item);
                   }}
-                  className="rounded-full h-8 w-8 bg-black/50 text-white hover:bg-black/70"
+                  className="rounded-full h-8 w-8"
               >
                   <Copy className="h-4 w-4" />
                   <span className="sr-only">Clonar Item</span>
@@ -134,10 +130,10 @@ export function ItemCard({ item, onContainerClick, onItemSave, onItemDelete, onI
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                       <Button
-                        variant="destructive"
+                        variant="ghost"
                         size="icon"
                         onClick={(e) => e.stopPropagation()}
-                        className="rounded-full h-8 w-8"
+                        className="rounded-full h-8 w-8 text-destructive hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
                         <span className="sr-only">Excluir Item</span>
@@ -159,25 +155,9 @@ export function ItemCard({ item, onContainerClick, onItemSave, onItemDelete, onI
                   </AlertDialogContent>
               </AlertDialog>
           </div>
-
-          {item.isContainer && (
-            <div 
-              onClick={(e) => { e.stopPropagation(); onContainerClick(item.id); }}
-              className="absolute top-2 left-2 flex items-center gap-1.5 rounded-full bg-black/50 px-2 py-1 text-xs text-white cursor-pointer w-fit"
-            >
-              <PackageOpen className="h-3 w-3" />
-              <span>Container</span>
-            </div>
-          )}
-
         </CardHeader>
-        <CardContent className="p-4 pt-4 flex-1">
-          <CardTitle className="text-lg line-clamp-1 mb-2">{item.name}</CardTitle>
-          <div className="flex items-start text-sm text-muted-foreground mb-1">
-              <MapPin className="h-4 w-4 mr-2 shrink-0 mt-0.5" />
-              <span className="truncate">{item.locationPath?.join(' / ') || ''}</span>
-          </div>
-          <CardDescription className="text-sm line-clamp-2 mt-2">{item.description}</CardDescription>
+        <CardContent className="p-4 pt-0 flex-1">
+          <CardDescription className="text-sm line-clamp-2">{item.description}</CardDescription>
         </CardContent>
         <CardFooter className="p-4 pt-0 flex flex-wrap gap-2">
           {item.tags?.slice(0, 3).map((tag) => (
@@ -189,5 +169,3 @@ export function ItemCard({ item, onContainerClick, onItemSave, onItemDelete, onI
     </>
   );
 }
-
-    

@@ -2,7 +2,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, Pencil, Trash2 } from 'lucide-react';
 import type { Property } from '@/lib/types';
@@ -42,23 +41,14 @@ export function PropertyCard({ property, onDelete, onPropertySave }: PropertyCar
 
   return (
     <Card className="overflow-hidden transition-all duration-300 ease-in-out group flex flex-col">
-      <CardHeader className="p-0 relative">
-        <Link href={`/properties/${property.id}`} className="block">
-          <div className="relative h-48 w-full">
-            <Image
-              src={property.imageUrl}
-              alt={property.name}
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className="object-cover group-hover:scale-105 transition-transform duration-300"
-              data-ai-hint={property.imageHint}
-            />
-             <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
-          </div>
-        </Link>
-        <div className="absolute top-2 right-2 flex gap-2">
+      <CardHeader className="flex flex-row items-start justify-between p-4">
+        <div className="flex-grow">
+            <CardTitle className="text-xl mb-1">{property.name}</CardTitle>
+            <p className="text-sm text-muted-foreground">{property.address}</p>
+        </div>
+        <div className="flex gap-2">
             <AddPropertyDialog propertyToEdit={property} onPropertySave={onPropertySave}>
-              <Button variant="secondary" size="icon" className="rounded-full h-8 w-8">
+              <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
                   <Pencil className="h-4 w-4" />
                   <span className="sr-only">Editar Imóvel</span>
               </Button>
@@ -66,7 +56,7 @@ export function PropertyCard({ property, onDelete, onPropertySave }: PropertyCar
 
             <AlertDialog>
                 <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="icon" className="rounded-full h-8 w-8">
+                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive rounded-full h-8 w-8">
                         <Trash2 className="h-4 w-4" />
                         <span className="sr-only">Excluir Imóvel</span>
                     </Button>
@@ -82,16 +72,15 @@ export function PropertyCard({ property, onDelete, onPropertySave }: PropertyCar
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete}>Excluir</AlertDialogAction>
+                        <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Excluir</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
         </div>
       </CardHeader>
       <Link href={`/properties/${property.id}`} className="flex-grow flex flex-col">
-        <CardContent className="p-4 bg-card flex-grow">
-          <CardTitle className="text-xl mb-1">{property.name}</CardTitle>
-          <p className="text-sm text-muted-foreground">{property.address}</p>
+        <CardContent className="flex-grow p-0">
+          {/* Content can be added here later if needed */}
         </CardContent>
         <div className="p-4 pt-0 mt-auto flex items-center justify-end text-primary opacity-0 group-hover:opacity-100 transition-opacity">
             <span className="text-sm font-medium">Ver inventário</span>
