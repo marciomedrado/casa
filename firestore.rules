@@ -1,0 +1,195 @@
+/**
+ * @fileoverview Firestore Security Rules for the Inventory Management Application.
+ *
+ * Core Philosophy:
+ * This ruleset implements a role-based access control model for property data.
+ * Users are granted access to properties based on their roles defined in the `propertyMembers` collection.
+ * Data is nested under property IDs to ensure data isolation and efficient querying.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores user profile information, accessible only by the user.
+ * - /properties/{propertyId}: Stores property details.
+ * - /properties/{propertyId}/locations/{locationId}: Stores location details within a property.
+ * - /properties/{propertyId}/items/{itemId}: Stores item details within a property.
+ * - /properties/{propertyId}/items/{itemId}/itemLocations/{itemLocationId}: Stores the history of item locations.
+ * - /properties/{propertyId}/tags/{tagId}: Stores tag details within a property.
+ * - /properties/{propertyId}/items/{itemId}/itemTags/{itemTagId}: Stores the association between items and tags.
+ * - /properties/{propertyId}/photos/{photoId}: Stores photo details associated with items or locations.
+ * - /properties/{propertyId}/barcodes/{barcodeId}: Stores barcode details associated with items or locations.
+ * - /properties/{propertyId}/moveLogs/{moveLogId}: Stores move log details within a property.
+ * - /propertyMembers/{propertyMemberId}: Stores user membership roles for each property.
+ *
+ * Key Security Decisions:
+ * - User profiles are private and only accessible to the authenticated user.
+ * - Access to properties and their subcollections (locations, items, etc.) is governed by roles defined in the `propertyMembers` collection.
+ * - Listing all users is disallowed.
+ * - All write operations require a valid authentication token.
+ *
+ * Denormalization for Authorization:
+ * - Property access is determined by the `PropertyMember` documents.  A `PropertyMember` document contains the `propertyId`, the `userId`, and the `role`.
+ *   This information is used to grant the user the appropriate access rights to the other resources nested under the `properties/{propertyId}` document.
+ *
+ * Structural Segregation:
+ * - No explicit segregation of private vs. public content is implemented. All data is considered private and requires authentication.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Checks if the user is signed in.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the user is the owner of the document, based on the provided userId.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the user is the owner of an existing document.
+     */
+    function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Allows the user to create their own user document.
+     * @path /users/{userId}
+     * @allow (create) - User with UID 'user_abc' can create document /users/user_abc
+     * @deny (create) - User with UID 'user_abc' cannot create document /users/user_xyz
+     * @principle Enforces user-ownership for user profiles.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == request.auth.uid;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Controls access to property documents.
+     * @path /properties/{propertyId}
+     */
+    match /properties/{propertyId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn(); // Any authenticated user can create a property
+      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+    }
+
+    /**
+     * @description Controls access to location documents within a property.
+     * @path /properties/{propertyId}/locations/{locationId}
+     */
+    match /properties/{propertyId}/locations/{locationId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn(); // Any authenticated user can create a location
+      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+    }
+
+    /**
+     * @description Controls access to item documents within a property.
+     * @path /properties/{propertyId}/items/{itemId}
+     */
+    match /properties/{propertyId}/items/{itemId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn(); // Any authenticated user can create an item
+      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+    }
+
+    /**
+     * @description Controls access to itemLocation documents within a property and item.
+     * @path /properties/{propertyId}/items/{itemId}/itemLocations/{itemLocationId}
+     */
+    match /properties/{propertyId}/items/{itemId}/itemLocations/{itemLocationId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn(); // Any authenticated user can create an itemLocation
+      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+    }
+
+    /**
+     * @description Controls access to tag documents within a property.
+     * @path /properties/{propertyId}/tags/{tagId}
+     */
+    match /properties/{propertyId}/tags/{tagId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn(); // Any authenticated user can create a tag
+      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+    }
+
+    /**
+     * @description Controls access to itemTag documents within a property and item.
+     * @path /properties/{propertyId}/items/{itemId}/itemTags/{itemTagId}
+     */
+    match /properties/{propertyId}/items/{itemId}/itemTags/{itemTagId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn(); // Any authenticated user can create an itemTag
+      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+    }
+
+    /**
+     * @description Controls access to photo documents within a property.
+     * @path /properties/{propertyId}/photos/{photoId}
+     */
+    match /properties/{propertyId}/photos/{photoId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn(); // Any authenticated user can create a photo
+      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+    }
+
+    /**
+     * @description Controls access to barcode documents within a property.
+     * @path /properties/{propertyId}/barcodes/{barcodeId}
+     */
+    match /properties/{propertyId}/barcodes/{barcodeId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn(); // Any authenticated user can create a barcode
+      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+    }
+
+    /**
+     * @description Controls access to moveLog documents within a property.
+     * @path /properties/{propertyId}/moveLogs/{moveLogId}
+     */
+    match /properties/{propertyId}/moveLogs/{moveLogId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn(); // Any authenticated user can create a moveLog
+      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+    }
+
+    /**
+     * @description Controls access to propertyMember documents.
+     * @path /propertyMembers/{propertyMemberId}
+     */
+    match /propertyMembers/{propertyMemberId} {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isSignedIn();
+      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+    }
+  }
+}

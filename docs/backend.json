@@ -1,0 +1,663 @@
+{
+  "entities": {
+    "Property": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Property",
+      "type": "object",
+      "description": "Represents a physical property (e.g., a house).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Property entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the property."
+        },
+        "address": {
+          "type": "string",
+          "description": "Address of the property (optional)."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp of when the property was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "createdAt"
+      ]
+    },
+    "Location": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Location",
+      "type": "object",
+      "description": "Represents a location within a property (e.g., room, cabinet, box). Forms a hierarchical tree.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Location entity."
+        },
+        "propertyId": {
+          "type": "string",
+          "description": "Reference to Property. (Relationship: Property 1:N Location)"
+        },
+        "parentId": {
+          "type": "string",
+          "description": "Reference to parent Location. Null if it's the root location. (Self-referential, tree structure)."
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of location (room, cabinet, shelf, drawer, box, bin, other)."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the location."
+        },
+        "code": {
+          "type": "string",
+          "description": "A short, unique code or slug for the location, e.g., for labels."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the location (optional)."
+        },
+        "sortOrder": {
+          "type": "number",
+          "description": "Sorting order within the same level of the hierarchy."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp of when the location was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp of when the location was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "propertyId",
+        "type",
+        "name",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Item": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Item",
+      "type": "object",
+      "description": "Represents an item inventoried within a property.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Item entity."
+        },
+        "propertyId": {
+          "type": "string",
+          "description": "Reference to Property. (Relationship: Property 1:N Item)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the item."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the item (optional)."
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Quantity of the item."
+        },
+        "unit": {
+          "type": "string",
+          "description": "Unit of measurement for the item (e.g., un, par, kg)."
+        },
+        "sku": {
+          "type": "string",
+          "description": "Stock keeping unit (SKU) for the item (optional)."
+        },
+        "valueEstimate": {
+          "type": "number",
+          "description": "Estimated value of the item (optional)."
+        },
+        "isArchived": {
+          "type": "boolean",
+          "description": "Whether the item is archived."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp of when the item was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp of when the item was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "propertyId",
+        "name",
+        "quantity",
+        "isArchived",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ItemLocation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ItemLocation",
+      "type": "object",
+      "description": "Represents the location of an item at a specific point in time. Tracks history.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ItemLocation entity."
+        },
+        "itemId": {
+          "type": "string",
+          "description": "Reference to Item. (Relationship: Item 1:N ItemLocation)"
+        },
+        "locationId": {
+          "type": "string",
+          "description": "Reference to Location. (Relationship: Location 1:N ItemLocation)"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Quantity of the item at this location."
+        },
+        "isCurrent": {
+          "type": "boolean",
+          "description": "Whether this is the current location of the item."
+        },
+        "beganAt": {
+          "type": "string",
+          "description": "Timestamp of when the item was placed at this location.",
+          "format": "date-time"
+        },
+        "endedAt": {
+          "type": "string",
+          "description": "Timestamp of when the item was removed from this location (null if still there).",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "itemId",
+        "locationId",
+        "quantity",
+        "isCurrent",
+        "beganAt"
+      ]
+    },
+    "Tag": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Tag",
+      "type": "object",
+      "description": "Represents a tag that can be associated with items.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Tag entity."
+        },
+        "propertyId": {
+          "type": "string",
+          "description": "Reference to Property. (Relationship: Property 1:N Tag)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the tag."
+        }
+      },
+      "required": [
+        "id",
+        "propertyId",
+        "name"
+      ]
+    },
+    "ItemTag": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ItemTag",
+      "type": "object",
+      "description": "Represents the association between items and tags (many-to-many relationship).",
+      "properties": {
+        "itemId": {
+          "type": "string",
+          "description": "Reference to Item. (Part of composite key)"
+        },
+        "tagId": {
+          "type": "string",
+          "description": "Reference to Tag. (Part of composite key)"
+        }
+      },
+      "required": [
+        "itemId",
+        "tagId"
+      ]
+    },
+    "Photo": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Photo",
+      "type": "object",
+      "description": "Represents a photo associated with an item or location.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Photo entity."
+        },
+        "entityType": {
+          "type": "string",
+          "description": "Type of entity the photo is associated with (item or location)."
+        },
+        "entityId": {
+          "type": "string",
+          "description": "Reference to the Item or Location."
+        },
+        "url": {
+          "type": "string",
+          "description": "URL of the photo."
+        },
+        "width": {
+          "type": "number",
+          "description": "Width of the photo (optional)."
+        },
+        "height": {
+          "type": "number",
+          "description": "Height of the photo (optional)."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp of when the photo was uploaded.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "entityType",
+        "entityId",
+        "url",
+        "createdAt"
+      ]
+    },
+    "Barcode": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Barcode",
+      "type": "object",
+      "description": "Represents a barcode or QR code associated with an item or location.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Barcode entity."
+        },
+        "entityType": {
+          "type": "string",
+          "description": "Type of entity the barcode is associated with (item or location)."
+        },
+        "entityId": {
+          "type": "string",
+          "description": "Reference to the Item or Location."
+        },
+        "symbology": {
+          "type": "string",
+          "description": "Type of barcode symbology (qr, code128, ean13...)."
+        },
+        "value": {
+          "type": "string",
+          "description": "Value of the barcode."
+        },
+        "propertyId": {
+          "type": "string",
+          "description": "Reference to Property. (Relationship: Property 1:N Barcode)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp of when the barcode was generated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "entityType",
+        "entityId",
+        "symbology",
+        "value",
+        "propertyId",
+        "createdAt"
+      ]
+    },
+    "MoveLog": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MoveLog",
+      "type": "object",
+      "description": "Represents a log of item movements between locations.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the MoveLog entity."
+        },
+        "itemId": {
+          "type": "string",
+          "description": "Reference to Item. (Relationship: Item 1:N MoveLog)"
+        },
+        "fromLocationId": {
+          "type": "string",
+          "description": "Reference to Location the item was moved from (optional)."
+        },
+        "toLocationId": {
+          "type": "string",
+          "description": "Reference to Location the item was moved to (optional)."
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Quantity of items moved."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User who performed the move."
+        },
+        "at": {
+          "type": "string",
+          "description": "Timestamp of when the move occurred.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "itemId",
+        "quantity",
+        "userId",
+        "at"
+      ]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "email"
+      ]
+    },
+    "PropertyMember": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PropertyMember",
+      "type": "object",
+      "description": "Represents a user's membership and role within a specific property.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the PropertyMember entity."
+        },
+        "propertyId": {
+          "type": "string",
+          "description": "Reference to Property. (Relationship: Property 1:N PropertyMember)"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N PropertyMember)"
+        },
+        "role": {
+          "type": "string",
+          "description": "Role of the user within the property (owner, editor, viewer)."
+        }
+      },
+      "required": [
+        "id",
+        "propertyId",
+        "userId",
+        "role"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profile information.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user, corresponding to their Firebase Auth UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "properties/{propertyId}",
+        "definition": {
+          "entityName": "Property",
+          "schema": {
+            "$ref": "#/backend/entities/Property"
+          },
+          "description": "Stores property details.",
+          "params": [
+            {
+              "name": "propertyId",
+              "description": "The unique identifier for the property."
+            }
+          ]
+        }
+      },
+      {
+        "path": "properties/{propertyId}/locations/{locationId}",
+        "definition": {
+          "entityName": "Location",
+          "schema": {
+            "$ref": "#/backend/entities/Location"
+          },
+          "description": "Stores location details within a property.",
+          "params": [
+            {
+              "name": "propertyId",
+              "description": "The unique identifier for the property."
+            },
+            {
+              "name": "locationId",
+              "description": "The unique identifier for the location."
+            }
+          ]
+        }
+      },
+      {
+        "path": "properties/{propertyId}/items/{itemId}",
+        "definition": {
+          "entityName": "Item",
+          "schema": {
+            "$ref": "#/backend/entities/Item"
+          },
+          "description": "Stores item details within a property.",
+          "params": [
+            {
+              "name": "propertyId",
+              "description": "The unique identifier for the property."
+            },
+            {
+              "name": "itemId",
+              "description": "The unique identifier for the item."
+            }
+          ]
+        }
+      },
+      {
+        "path": "properties/{propertyId}/items/{itemId}/itemLocations/{itemLocationId}",
+        "definition": {
+          "entityName": "ItemLocation",
+          "schema": {
+            "$ref": "#/backend/entities/ItemLocation"
+          },
+          "description": "Stores the history of item locations within a property.",
+          "params": [
+            {
+              "name": "propertyId",
+              "description": "The unique identifier for the property."
+            },
+            {
+              "name": "itemId",
+              "description": "The unique identifier for the item."
+            },
+            {
+              "name": "itemLocationId",
+              "description": "The unique identifier for the item location record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "properties/{propertyId}/tags/{tagId}",
+        "definition": {
+          "entityName": "Tag",
+          "schema": {
+            "$ref": "#/backend/entities/Tag"
+          },
+          "description": "Stores tag details within a property.",
+          "params": [
+            {
+              "name": "propertyId",
+              "description": "The unique identifier for the property."
+            },
+            {
+              "name": "tagId",
+              "description": "The unique identifier for the tag."
+            }
+          ]
+        }
+      },
+      {
+        "path": "properties/{propertyId}/items/{itemId}/itemTags/{itemTagId}",
+        "definition": {
+          "entityName": "ItemTag",
+          "schema": {
+            "$ref": "#/backend/entities/ItemTag"
+          },
+          "description": "Stores the association between items and tags.",
+          "params": [
+            {
+              "name": "propertyId",
+              "description": "The unique identifier for the property."
+            },
+            {
+              "name": "itemId",
+              "description": "The unique identifier for the item."
+            },
+            {
+              "name": "itemTagId",
+              "description": "The unique identifier for the item tag association (composite key of itemId and tagId)."
+            }
+          ]
+        }
+      },
+      {
+        "path": "properties/{propertyId}/photos/{photoId}",
+        "definition": {
+          "entityName": "Photo",
+          "schema": {
+            "$ref": "#/backend/entities/Photo"
+          },
+          "description": "Stores photo details associated with items or locations.",
+          "params": [
+            {
+              "name": "propertyId",
+              "description": "The unique identifier for the property."
+            },
+            {
+              "name": "photoId",
+              "description": "The unique identifier for the photo."
+            }
+          ]
+        }
+      },
+      {
+        "path": "properties/{propertyId}/barcodes/{barcodeId}",
+        "definition": {
+          "entityName": "Barcode",
+          "schema": {
+            "$ref": "#/backend/entities/Barcode"
+          },
+          "description": "Stores barcode details associated with items or locations.",
+          "params": [
+            {
+              "name": "propertyId",
+              "description": "The unique identifier for the property."
+            },
+            {
+              "name": "barcodeId",
+              "description": "The unique identifier for the barcode."
+            }
+          ]
+        }
+      },
+      {
+        "path": "properties/{propertyId}/moveLogs/{moveLogId}",
+        "definition": {
+          "entityName": "MoveLog",
+          "schema": {
+            "$ref": "#/backend/entities/MoveLog"
+          },
+          "description": "Stores move log details within a property.",
+          "params": [
+            {
+              "name": "propertyId",
+              "description": "The unique identifier for the property."
+            },
+            {
+              "name": "moveLogId",
+              "description": "The unique identifier for the move log entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "propertyMembers/{propertyMemberId}",
+        "definition": {
+          "entityName": "PropertyMember",
+          "schema": {
+            "$ref": "#/backend/entities/PropertyMember"
+          },
+          "description": "Stores user membership roles for each property.",
+          "params": [
+            {
+              "name": "propertyMemberId",
+              "description": "The unique identifier for the property member."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to facilitate a home inventory application with user roles (owner, editor, viewer) per property. It prioritizes authorization independence and efficient querying.  \n\nAuthorization Independence:  The `PropertyMember` collection holds user roles within properties.  While the location, items and barcodes collections are nested under the property, there is no need for the rules to use get() since authorization is managed using the user id. This ensures atomic operations.\n\nQAPs:\n*   List all Properties a user has access to:\n    *   Using collection group query on PropertyMember collection, get all properties a user is member of.\n    *   List Properties using the result of the first query.\n*   List all Items in a Property:\n    *   Since Items collection is nested under Properties, a simple collection query can get all Items in a property."
+  }
+}
