@@ -46,6 +46,11 @@ export function ItemBrowser({
     const doorItems: { [key: number]: Item[] } = {};
 
     itemsToProcess.forEach(item => {
+      // Only process items that are actually inside the current container if one is selected
+      if (currentContainerId && item.parentId !== currentContainerId) {
+          return;
+      }
+      
       if (item.subContainer?.type === 'drawer') {
         if (!drawerItems[item.subContainer.number]) {
           drawerItems[item.subContainer.number] = [];
@@ -53,7 +58,7 @@ export function ItemBrowser({
         drawerItems[item.subContainer.number].push(item);
       } else if (item.subContainer?.type === 'door') {
          if (!doorItems[item.subContainer.number]) {
-          doorItems[item.subContainer.number] = [];
+          doorItems[Number(item.subContainer.number)] = [];
         }
         doorItems[Number(item.subContainer.number)].push(item);
       } else {
@@ -177,9 +182,13 @@ export function ItemBrowser({
               )}
               </div>
             )}
-             {looseItems.length > 0 && (
+             {looseItems.length > 0 && (Object.keys(doorItems).length > 0 || Object.keys(drawerItems).length > 0) && (
               <>
                 <Separator className="my-8" />
+              </>
+            )}
+            {looseItems.length > 0 && (
+              <>
                 <h3 className="text-lg font-semibold mb-4">Itens Soltos</h3>
                 <ItemList items={looseItems} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={onItemSave} onItemDelete={onItemDelete} locations={allLocations} allItems={allItems} />
               </>
