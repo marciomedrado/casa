@@ -9,25 +9,33 @@ import { Header } from '@/components/layout/header';
 import { AddPropertyDialog } from '@/components/dashboard/add-property-dialog';
 import type { Property } from '@/lib/types';
 import { initializeDatabase, getProperties, saveProperty, deleteProperty } from '@/lib/storage';
+import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Dashboard() {
   const [properties, setProperties] = useState<Property[]>([]);
-  const [isClient, setIsClient] = useState(false);
+  const { user, loading } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
-    // This effect runs only on the client, after hydration
-    setIsClient(true);
-    initializeDatabase();
-    setProperties(getProperties());
-  }, []);
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+  useEffect(() => {
+    if (user) {
+      initializeDatabase();
+      setProperties(getProperties());
+    }
+  }, [user]);
 
   const handlePropertySave = (propertyToSave: Omit<Property, 'id' | 'imageUrl' | 'imageHint'> & { id?: string }) => {
     const savedProperty = saveProperty(propertyToSave);
     if (propertyToSave.id) {
-        // Editing
         setProperties(prev => prev.map(p => p.id === savedProperty.id ? savedProperty : p));
     } else {
-        // Adding
         setProperties(prev => [...prev, savedProperty]);
     }
   };
@@ -36,6 +44,25 @@ export default function Dashboard() {
     deleteProperty(propertyId);
     setProperties(prev => prev.filter(p => p.id !== propertyId));
   };
+  
+  if (loading || !user) {
+    return (
+        <div className="flex flex-col min-h-screen bg-background">
+            <Header />
+            <main className="flex-1 container mx-auto p-4 md:p-8">
+                 <div className="flex items-center justify-between mb-8">
+                    <Skeleton className="h-10 w-64" />
+                    <Skeleton className="h-10 w-40" />
+                </div>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    <Skeleton className="h-40 w-full" />
+                    <Skeleton className="h-40 w-full" />
+                    <Skeleton className="h-40 w-full" />
+                </div>
+            </main>
+        </div>
+    )
+  }
 
 
   return (
@@ -53,11 +80,10 @@ export default function Dashboard() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {isClient && properties.map((property) => (
+          {properties.map((property) => (
             <PropertyCard 
               key={property.id} 
               property={property} 
-              onEdit={() => { /* This will be handled by the dialog inside the card now */}}
               onDelete={handlePropertyDelete}
               onPropertySave={handlePropertySave}
             />

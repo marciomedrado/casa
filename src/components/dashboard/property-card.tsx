@@ -43,7 +43,9 @@ export function PropertyCard({ property, onDelete, onPropertySave }: PropertyCar
     <Card className="overflow-hidden transition-all duration-300 ease-in-out group flex flex-col">
       <CardHeader className="flex flex-row items-start justify-between p-4">
         <div className="flex-grow">
-            <CardTitle className="text-xl mb-1">{property.name}</CardTitle>
+            <Link href={`/properties/${property.id}`} className="flex-grow flex flex-col">
+              <CardTitle className="text-xl mb-1 hover:underline">{property.name}</CardTitle>
+            </Link>
             <p className="text-sm text-muted-foreground">{property.address}</p>
         </div>
         <div className="flex gap-2">
@@ -78,11 +80,19 @@ export function PropertyCard({ property, onDelete, onPropertySave }: PropertyCar
             </AlertDialog>
         </div>
       </CardHeader>
-      <Link href={`/properties/${property.id}`} className="flex-grow flex flex-col">
-        <CardContent className="flex-grow p-0">
-          {/* Content can be added here later if needed */}
-        </CardContent>
-        <div className="p-4 pt-0 mt-auto flex items-center justify-end text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+      <CardContent className="flex-grow p-0">
+          <Link href={`/properties/${property.id}`} className="block aspect-video w-full bg-muted overflow-hidden">
+             {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+                src={property.imageUrl || `https://picsum.photos/seed/${property.id}/600/400`}
+                alt={`Imagem de ${property.name}`}
+                data-ai-hint={property.imageHint}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          </Link>
+      </CardContent>
+      <Link href={`/properties/${property.id}`} className="w-full">
+        <div className="p-4 pt-2 flex items-center justify-end text-primary opacity-0 group-hover:opacity-100 transition-opacity">
             <span className="text-sm font-medium">Ver inventário</span>
             <ArrowRight className="ml-2 h-4 w-4" />
         </div>

@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, Search, Upload, Download, Settings } from 'lucide-react';
+import { Home, Search, Upload, Download, Settings, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,11 +14,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { MOCK_USER } from '@/lib/data';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { getProperties, getLocations, getItems, restoreFromBackup } from '@/lib/storage';
+import { useAuth } from '@/hooks/use-auth';
+import { Skeleton } from '../ui/skeleton';
 
 export function Header({ 
   showSidebarTrigger = false,
@@ -30,6 +31,7 @@ export function Header({
   setSearchQuery?: (query: string) => void,
 }) {
   const { toast } = useToast();
+  const { user, logout, loading } = useAuth();
   const restoreRef = useRef<HTMLInputElement>(null);
 
   const handleBackup = () => {
@@ -131,37 +133,44 @@ export function Header({
             />
           </div>
         </form>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="secondary" size="icon" className="rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={MOCK_USER.avatar} alt={MOCK_USER.name} />
-                <AvatarFallback>{MOCK_USER.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <span className="sr-only">Toggle user menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{MOCK_USER.name}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <Link href="/settings" passHref>
-              <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Configurações</span>
-              </DropdownMenuItem>
-            </Link>
-            <DropdownMenuItem onClick={handleBackup}>
-              <Download className="mr-2 h-4 w-4" />
-              <span>Fazer Backup</span>
-            </DropdownMenuItem>
-             <DropdownMenuItem onClick={handleRestoreClick}>
-                <Upload className="mr-2 h-4 w-4" />
-                <span>Restaurar Backup</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => toast({ title: "Em breve!", description: "A funcionalidade de logout será implementada em breve." })}>Sair</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {loading ? (
+            <Skeleton className="h-8 w-8 rounded-full" />
+        ) : user ? (
+            <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="secondary" size="icon" className="rounded-full">
+                <Avatar className="h-8 w-8">
+                    <AvatarImage src={user.avatar} alt={user.name} />
+                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <span className="sr-only">Toggle user menu</span>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuLabel>{user.name}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <Link href="/settings" passHref>
+                <DropdownMenuItem>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Configurações</span>
+                </DropdownMenuItem>
+                </Link>
+                <DropdownMenuItem onClick={handleBackup}>
+                <Download className="mr-2 h-4 w-4" />
+                <span>Fazer Backup</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleRestoreClick}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    <span>Restaurar Backup</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sair</span>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+            </DropdownMenu>
+        ) : null}
         <input 
           type="file" 
           ref={restoreRef}

@@ -5,17 +5,21 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { buildLocationTree } from '@/lib/data';
 import { AppLayout } from '@/components/layout/app-layout';
 import { ItemBrowser } from '@/components/inventory/item-browser';
-import { notFound, useParams } from 'next/navigation';
+import { notFound, useParams, useRouter } from 'next/navigation';
 import type { Location, Item } from '@/lib/types';
 import * as storage from '@/lib/storage';
 import { LocationBrowser } from '@/components/inventory/location-browser';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/hooks/use-auth';
+
 
 type ViewMode = 'all-locations' | 'items' | 'all-containers';
 
 export default function PropertyPage() {
   const params = useParams();
+  const router = useRouter();
+  const { user, loading } = useAuth();
   const propertyId = params.propertyId as string;
   const { toast } = useToast();
   
@@ -25,22 +29,28 @@ export default function PropertyPage() {
   const [allPropertyLocations, setAllPropertyLocations] = useState<Location[]>([]);
   const [allItems, setAllItems] = useState<Item[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('all-locations');
-  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
-    storage.initializeDatabase();
-    const currentProperty = storage.getPropertyById(propertyId);
-    if (currentProperty) {
-        setProperty(currentProperty);
-        const locations = storage.getLocations(propertyId) as Location[];
-        setAllPropertyLocations(locations);
-        setAllItems(storage.getItems(propertyId));
-    } else {
-        // If property is not found on the client, then it's a 404
-        notFound();
+    if (!loading && !user) {
+      router.push('/login');
     }
-  }, [propertyId]);
+  }, [user, loading, router]);
+
+
+  useEffect(() => {
+    if (user) {
+        storage.initializeDatabase();
+        const currentProperty = storage.getPropertyById(propertyId);
+        if (currentProperty) {
+            setProperty(currentProperty);
+            const locations = storage.getLocations(propertyId) as Location[];
+            setAllPropertyLocations(locations);
+            setAllItems(storage.getItems(propertyId));
+        } else {
+            notFound();
+        }
+    }
+  }, [propertyId, user]);
 
   const { locationTree, rootLocations } = useMemo(() => {
     const tree = buildLocationTree(allPropertyLocations);
@@ -168,20 +178,18 @@ export default function PropertyPage() {
             item.description.toLowerCase().includes(lowerCaseQuery) ||
             (item.tags && item.tags.some(tag => tag.toLowerCase().includes(lowerCaseQuery)))
         );
-        // When searching, we don't want to scope to a location name if results are from multiple places
         if (selectedLocationId) {
           selectedLocationName = `Resultados para "${searchQuery}" em ${selectedLocationName}`;
         } else {
           selectedLocationName = `Resultados para "${searchQuery}"`;
         }
-        // Force items view when searching
         if(viewMode !== 'items' && searchQuery) setViewMode('items');
     }
     
     return { filteredItems: items, selectedLocationName };
   }, [selectedLocationId, searchQuery, allItems, allPropertyLocations, viewMode, property]);
   
-  if (!isClient || !property) {
+  if (loading || !user || !property) {
     return (
         <AppLayout 
           pageTitle="Carregando..."
