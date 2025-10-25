@@ -190,56 +190,16 @@ export function deleteItem(itemId: string): void {
 }
 
 // --- Backup / Restore ---
-function parseCSV<T>(content: string): T[] {
-    if (!content) return [];
-    const rows = content.trim().split('\n');
-    if (rows.length < 2) return [];
+export function restoreFromBackup(jsonString: string) {
+    const backupData = JSON.parse(jsonString);
 
-    const header = rows[0].split(',').map(h => h.replace(/"/g, ''));
-    
-    return rows.slice(1).map(row => {
-        const values = row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) ?? [];
-        
-        const obj: any = {};
-        header.forEach((col, index) => {
-            let value = values[index] ? values[index].replace(/^"|"$/g, '').replace(/""/g, '"') : '';
-            
-            // Attempt to parse numbers, booleans, arrays, objects
-            if (!isNaN(Number(value)) && value.trim() !== '') {
-                obj[col] = Number(value);
-            } else if (value.toLowerCase() === 'true' || value.toLowerCase() === 'false') {
-                obj[col] = value.toLowerCase() === 'true';
-            } else if (value.includes(';')) {
-                obj[col] = value.split(';');
-            } else if (value.startsWith('{') && value.endsWith('}')) {
-                 try {
-                   obj[col] = JSON.parse(value);
-                 } catch(e) {
-                    obj[col] = null; // or keep as string
-                 }
-            } else if(value === 'null' || value === '') {
-                 obj[col] = null;
-            }
-            else {
-                obj[col] = value;
-            }
-        });
-        return obj as T;
-    });
-}
-
-
-export function restoreFromCSV(propertiesCSV?: string, locationsCSV?: string, itemsCSV?: string) {
-    if (propertiesCSV) {
-        const properties = parseCSV<Property>(propertiesCSV);
-        if (properties.length > 0) saveToStorage(PROPERTIES_KEY, properties);
+    if (backupData.properties && Array.isArray(backupData.properties)) {
+        saveToStorage<Property>(PROPERTIES_KEY, backupData.properties);
     }
-    if (locationsCSV) {
-        const locations = parseCSV<Omit<Location, 'children'>>(locationsCSV);
-        if (locations.length > 0) saveToStorage(LOCATIONS_KEY, locations);
+    if (backupData.locations && Array.isArray(backupData.locations)) {
+        saveToStorage<Omit<Location, 'children'>>(LOCATIONS_KEY, backupData.locations);
     }
-    if (itemsCSV) {
-        const items = parseCSV<Item>(itemsCSV);
-        if (items.length > 0) saveToStorage(ITEMS_KEY, items);
+    if (backupData.items && Array.isArray(backupData.items)) {
+        saveToStorage<Item>(ITEMS_KEY, backupData.items);
     }
 }

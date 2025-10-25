@@ -18,10 +18,7 @@ import { MOCK_USER } from '@/lib/data';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { getProperties, getLocations, getItems, restoreFromCSV } from '@/lib/storage';
-import type { Location, Item } from '@/lib/types';
-
-const DB_PREFIX = 'casa-organizzata';
+import { getProperties, getLocations, getItems, restoreFromBackup } from '@/lib/storage';
 
 export function Header({ 
   showSidebarTrigger = false,
@@ -35,55 +32,27 @@ export function Header({
   const { toast } = useToast();
   const restoreRef = useRef<HTMLInputElement>(null);
 
-  const convertToCSV = (data: any[], columns: string[]) => {
-    const header = columns.join(',');
-    const rows = data.map(item => 
-        columns.map(col => {
-            let val = item[col];
-            if (val === null || val === undefined) return '';
-            if (Array.isArray(val)) {
-                return `"${val.join(';')}"`;
-            }
-            if (typeof val === 'object' && val !== null) {
-              return `"${JSON.stringify(val).replace(/"/g, '""')}"`;
-            }
-            return `"${String(val).replace(/"/g, '""')}"`;
-        }).join(',')
-    );
-    return [header, ...rows].join('\n');
-  }
-
   const handleBackup = () => {
-    const downloadCSV = (filename: string, content: string) => {
-        const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        if (link.download !== undefined) {
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", filename);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-    }
-    
-    const properties = getProperties();
-    const locations = getLocations();
-    const items = getItems();
+    const backupData = {
+      properties: getProperties(),
+      locations: getLocations(),
+      items: getItems(),
+    };
 
-
-    const propertiesCSV = convertToCSV(properties, ['id', 'name', 'address', 'imageUrl', 'imageHint']);
-    const locationsCSV = convertToCSV(locations, ['id', 'name', 'propertyId', 'parentId', 'type', 'icon']);
-    const itemsCSV = convertToCSV(items, ['id', 'name', 'description', 'quantity', 'tags', 'imageUrl', 'imageHint', 'locationId', 'parentId', 'isContainer', 'doorCount', 'drawerCount', 'propertyId', 'locationPath', 'subContainer']);
-
-    downloadCSV('properties.csv', propertiesCSV);
-    downloadCSV('locations.csv', locationsCSV);
-    downloadCSV('items.csv', itemsCSV);
+    const jsonString = JSON.stringify(backupData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "casa-organizzata-backup.json");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 
     toast({
         title: "Backup Concluído",
-        description: "Seus dados foram exportados para arquivos CSV."
+        description: "Seus dados foram exportados para um arquivo JSON."
     });
   }
 
@@ -92,47 +61,42 @@ export function Header({
   }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    const filePromises = Array.from(files).map(file => {
-        return new Promise<{ name: string, content: string }>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                resolve({ name: file.name, content: e.target?.result as string });
-            };
-            reader.onerror = reject;
-            reader.readAsText(file);
-        });
-    });
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const content = e.target?.result as string;
+            restoreFromBackup(content);
 
-    Promise.all(filePromises).then(fileContents => {
-        const data: { [key: string]: string } = {};
-        fileContents.forEach(file => {
-            if (file.name === 'properties.csv' || file.name === 'locations.csv' || file.name === 'items.csv') {
-                data[file.name.replace('.csv', '')] = file.content;
-            }
-        });
+            toast({
+                title: "Restauração Concluída",
+                description: "Seus dados foram importados com sucesso. A página será atualizada.",
+            });
 
-        restoreFromCSV(data.properties, data.locations, data.items);
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
 
-        toast({
-            title: "Restauração Concluída",
-            description: "Seus dados foram importados com sucesso. A página será atualizada.",
-        });
-
-        setTimeout(() => {
-            window.location.reload();
-        }, 2000);
-
-    }).catch(error => {
-        console.error("Error reading files:", error);
+        } catch (error) {
+             console.error("Error processing backup file:", error);
+            toast({
+                title: "Erro na Restauração",
+                description: "O arquivo de backup é inválido ou está corrompido.",
+                variant: "destructive"
+            });
+        }
+    };
+    reader.onerror = () => {
+        console.error("Error reading file:", reader.error);
         toast({
             title: "Erro na Restauração",
-            description: "Não foi possível ler os arquivos de backup.",
+            description: "Não foi possível ler o arquivo de backup.",
             variant: "destructive"
         });
-    });
+    };
+    reader.readAsText(file);
     
     // Reset file input
     if(restoreRef.current) restoreRef.current.value = "";
@@ -195,9 +159,8 @@ export function Header({
         </DropdownMenu>
         <input 
           type="file" 
-          ref={restoreRef} 
-          multiple
-          accept=".csv"
+          ref={restoreRef}
+          accept=".json"
           onChange={handleFileChange}
           className="hidden" 
         />
