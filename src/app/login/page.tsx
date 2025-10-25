@@ -22,19 +22,15 @@ export default function LoginPage() {
     const { user, login, loading } = useAuth();
     const router = useRouter();
 
+    // This effect handles redirection AFTER a user is successfully authenticated and available in the hook.
     useEffect(() => {
         if (!loading && user) {
             router.push('/');
         }
     }, [user, loading, router]);
     
-    if (loading || user) {
-        return (
-             <div className="flex items-center justify-center min-h-screen bg-background">
-                <p>Carregando...</p>
-            </div>
-        )
-    }
+    // We no longer need to show a loading state on this page,
+    // as the `useAuth` hook will trigger a redirect once the user is available.
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
@@ -50,9 +46,13 @@ export default function LoginPage() {
                     <CardDescription>Faça login para organizar sua casa.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Button onClick={login} className="w-full">
-                        <GoogleIcon className="mr-2"/>
-                        Fazer login com o Google
+                    <Button onClick={login} disabled={loading} className="w-full">
+                        {loading ? 'Carregando...' : (
+                            <>
+                                <GoogleIcon className="mr-2"/>
+                                Fazer login com o Google
+                            </>
+                        )}
                     </Button>
                 </CardContent>
             </Card>
