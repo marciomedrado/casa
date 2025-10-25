@@ -1,44 +1,52 @@
 
 'use client';
 
-import { useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  GoogleAuthProvider,
-  signInWithPopup,
-  signOut,
-} from 'firebase/auth';
-import { useUser, useFirebase } from '@/firebase';
+import type { User } from '@/lib/types';
+import { MOCK_USER } from '@/lib/data';
+
+const AUTH_KEY = 'casa-organizzata-auth';
 
 export function useAuth() {
-  const { auth } = useFirebase();
-  const { user, isUserLoading, userError } = useUser();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const login = useCallback(async () => {
-    const provider = new GoogleAuthProvider();
+  useEffect(() => {
     try {
-      await signInWithPopup(auth, provider);
-      router.push('/');
+      const storedAuth = localStorage.getItem(AUTH_KEY);
+      if (storedAuth) {
+        setUser(JSON.parse(storedAuth));
+      }
     } catch (error) {
-      console.error("Erro no login com Google:", error);
+      console.error('Failed to parse auth from localStorage', error);
+    } finally {
+      setLoading(false);
     }
-  }, [auth, router]);
+  }, []);
 
-  const logout = useCallback(async () => {
-    try {
-      await signOut(auth);
-      router.push('/login');
-    } catch (error) {
-      console.error("Erro ao fazer logout:", error);
-    }
-  }, [auth, router]);
+  const login = useCallback(() => {
+    setLoading(true);
+    const mockUser: User = {
+        ...MOCK_USER,
+        // Mimic what Firebase user object might have
+        uid: 'mock-user-uid',
+        providerId: 'google.com',
+        photoURL: MOCK_USER.avatar,
+        displayName: MOCK_USER.name,
+    } as User;
+    localStorage.setItem(AUTH_KEY, JSON.stringify(mockUser));
+    setUser(mockUser);
+    setLoading(false);
+    router.push('/');
+  }, [router]);
 
-  return { 
-    user, 
-    login, 
-    logout, 
-    loading: isUserLoading,
-    error: userError 
-  };
+  const logout = useCallback(() => {
+    localStorage.removeItem(AUTH_KEY);
+    setUser(null);
+    router.push('/login');
+  }, [router]);
+
+  return { user, login, logout, loading, error: null };
 }

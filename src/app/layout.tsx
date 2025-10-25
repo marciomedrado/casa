@@ -6,7 +6,6 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { useTheme } from '@/hooks/use-theme';
 import { useEffect } from 'react';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 // This is a temporary solution for metadata until we can generate it dynamically
 // export const metadata: Metadata = {
@@ -45,10 +44,8 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <FirebaseClientProvider>
           {children}
           <Toaster />
-        </FirebaseClientProvider>
       </body>
     </html>
   );
