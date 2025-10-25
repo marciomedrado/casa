@@ -35,11 +35,17 @@ export default function PropertyPage() {
   const { data: property, isLoading: propertyLoading, error: propertyError } = useDoc<Property>(propertyRef);
   
   // Locations Data
-  const locationsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'properties', propertyId, 'locations') : null, [firestore, propertyId]);
+  const locationsQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return collection(firestore, 'properties', propertyId, 'locations');
+  }, [firestore, propertyId, user]);
   const { data: allPropertyLocations, isLoading: locationsLoading } = useCollection<Location>(locationsQuery);
 
   // Items Data
-  const itemsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'properties', propertyId, 'items') : null, [firestore, propertyId]);
+  const itemsQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return collection(firestore, 'properties', propertyId, 'items');
+  }, [firestore, propertyId, user]);
   const { data: allItems, isLoading: itemsLoading } = useCollection<Item>(itemsQuery);
 
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);

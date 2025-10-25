@@ -13,7 +13,7 @@ import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFirebase } from '@/firebase';
 import { useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, where, doc, deleteDoc, writeBatch, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -27,7 +27,7 @@ export default function Dashboard() {
   const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
   
   const propertiesQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'properties'), where('ownerId', '==', user.uid));
   }, [firestore, user]);
 
