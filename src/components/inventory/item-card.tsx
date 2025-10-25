@@ -103,7 +103,7 @@ export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, 
           item.isContainer ? "cursor-pointer" : "cursor-default"
         )}
       >
-        <CardHeader className="flex flex-row items-start justify-between gap-4 p-4">
+        <CardHeader className="flex flex-row items-start justify-start gap-4 p-4">
              <div className="flex-1 min-w-0">
                  {item.isContainer && (
                   <div 
