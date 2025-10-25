@@ -61,7 +61,7 @@ export function AppLayout({
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => onLocationSelect(null, 'all-containers')} isActive={viewMode === 'all-containers' && selectedLocationId === null} tooltip="Todos os Containers">
+                <SidebarMenuButton onClick={() => onLocationSelect(null, 'all-containers')} isActive={viewMode === 'all-containers'} tooltip="Todos os containers">
                   <Package />
                   <span>Todos os containers</span>
                 </SidebarMenuButton>

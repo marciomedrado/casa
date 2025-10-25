@@ -127,13 +127,16 @@ export default function PropertyPage() {
 
   const { filteredItems, selectedLocationName } = useMemo(() => {
     let items = allItems;
-    let selectedLocationName = property?.name ?? 'Todos os Itens';
+    let selectedLocationName = property?.name ?? 'Visão Geral';
     
     if (viewMode === 'all-locations') {
-        selectedLocationName = property?.name ?? 'Todos os Locais';
+        selectedLocationName = property?.name ?? 'Todos os Cômodos';
     } else if (viewMode === 'all-containers') {
         items = allItems.filter(item => item.isContainer);
         selectedLocationName = 'Todos os Containers';
+    } else if (viewMode === 'items' && !selectedLocationId) {
+        items = allItems;
+        selectedLocationName = 'Todos os Itens';
     }
 
 
@@ -168,7 +171,7 @@ export default function PropertyPage() {
     return null;
   }
 
-  const shouldShowLocationBrowser = viewMode === 'all-locations' && !searchQuery;
+  const shouldShowLocationBrowser = viewMode === 'all-locations' && !searchQuery && !selectedLocationId;
 
   return (
     <AppLayout 
