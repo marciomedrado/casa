@@ -1,195 +1,277 @@
 /**
- * @fileoverview Firestore Security Rules for the Inventory Management Application.
- *
- * Core Philosophy:
- * This ruleset implements a role-based access control model for property data.
- * Users are granted access to properties based on their roles defined in the `propertyMembers` collection.
- * Data is nested under property IDs to ensure data isolation and efficient querying.
+ * @file Firestore Security Rules
+ * @description This ruleset enforces a multi-tenant security model where users have ownership over their data and can be granted specific roles within properties.
  *
  * Data Structure:
- * - /users/{userId}: Stores user profile information, accessible only by the user.
- * - /properties/{propertyId}: Stores property details.
- * - /properties/{propertyId}/locations/{locationId}: Stores location details within a property.
- * - /properties/{propertyId}/items/{itemId}: Stores item details within a property.
- * - /properties/{propertyId}/items/{itemId}/itemLocations/{itemLocationId}: Stores the history of item locations.
- * - /properties/{propertyId}/tags/{tagId}: Stores tag details within a property.
- * - /properties/{propertyId}/items/{itemId}/itemTags/{itemTagId}: Stores the association between items and tags.
- * - /properties/{propertyId}/photos/{photoId}: Stores photo details associated with items or locations.
- * - /properties/{propertyId}/barcodes/{barcodeId}: Stores barcode details associated with items or locations.
- * - /properties/{propertyId}/moveLogs/{moveLogId}: Stores move log details within a property.
- * - /propertyMembers/{propertyMemberId}: Stores user membership roles for each property.
+ * - /users/{userId}: Stores user profiles, accessible only to the user themselves.
+ * - /user_permissions/{userId}: Stores user permissions, accessible only to the user themselves.
+ * - /properties/{propertyId}: Stores property information, with access controlled via a 'members' map on the document.
+ * - /properties/{propertyId}/locations/{locationId}: Stores locations within a property. Access is controlled by the 'members' map on the parent property document.
+ * - /properties/{propertyId}/items/{itemId}: Stores items within a property. Access is controlled by the 'members' map on the parent property document.
+ * - /properties/{propertyId}/items/{itemId}/item_locations/{itemLocationId}: Stores item locations. Access is controlled by the 'members' map on the grandparent property document.
+ * - /properties/{propertyId}/tags/{tagId}: Stores tags within a property. Access is controlled by the 'members' map on the parent property document.
+ * - /properties/{propertyId}/items/{itemId}/item_tags/{itemTagId}: Stores item tags. Access is controlled by the 'members' map on the grandparent property document.
+ * - /properties/{propertyId}/items/{itemId}/photos/{photoId}: Stores photos associated with items. Access is controlled by the 'members' map on the grandparent property document.
+ * - /properties/{propertyId}/locations/{locationId}/photos/{photoId}: Stores photos associated with locations. Access is controlled by the 'members' map on the grandparent property document.
+ * - /properties/{propertyId}/barcodes/{barcodeId}: Stores barcodes within a property. Access is controlled by the 'members' map on the parent property document.
+ * - /properties/{propertyId}/items/{itemId}/move_logs/{moveLogId}: Stores move logs. Access is controlled by the 'members' map on the grandparent property document.
  *
  * Key Security Decisions:
- * - User profiles are private and only accessible to the authenticated user.
- * - Access to properties and their subcollections (locations, items, etc.) is governed by roles defined in the `propertyMembers` collection.
- * - Listing all users is disallowed.
- * - All write operations require a valid authentication token.
+ * - Strict user-ownership for /users/{userId} and /user_permissions/{userId}.
+ * - Access to properties and their subcollections is managed through a 'members' map on the property document, enabling role-based access control.
+ * - No user listing is allowed for the /users collection.
  *
  * Denormalization for Authorization:
- * - Property access is determined by the `PropertyMember` documents.  A `PropertyMember` document contains the `propertyId`, the `userId`, and the `role`.
- *   This information is used to grant the user the appropriate access rights to the other resources nested under the `properties/{propertyId}` document.
- *
- * Structural Segregation:
- * - No explicit segregation of private vs. public content is implemented. All data is considered private and requires authentication.
+ * - The 'members' map within the /properties/{propertyId} document denormalizes user roles, eliminating the need for costly 'get()' calls to a separate PropertyMember collection. This map should contain user IDs as keys and their roles (e.g., 'owner', 'editor', 'viewer') as values.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
+     * @description Controls access to user profiles. Only the authenticated user can read or write their own profile.
+     * @path /users/{userId}
+     * @allow (get, create, update, delete) if the authenticated user's ID matches the userId.
+     *  Example: User with UID 'user123' can read, create, update, or delete the document at /users/user123.
+     * @deny (get, create, update, delete) if the authenticated user's ID does not match the userId.
+     *  Example: User with UID 'user456' cannot read, create, update, or delete the document at /users/user123.
+     * @principle Enforces user-ownership for user profiles.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    /**
+     * @description Controls access to user permissions. Only the authenticated user can read or write their own permissions.
+     * @path /user_permissions/{userId}
+     * @allow (get, create, update, delete) if the authenticated user's ID matches the userId.
+     *  Example: User with UID 'user123' can read, create, update, or delete the document at /user_permissions/user123.
+     * @deny (get, create, update, delete) if the authenticated user's ID does not match the userId.
+     *  Example: User with UID 'user456' cannot read, create, update, or delete the document at /user_permissions/user123.
+     * @principle Enforces user-ownership for user permissions.
+     */
+    match /user_permissions/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    /**
+     * @description Controls access to properties. Access is determined by the 'members' map on the property document.
+     * @path /properties/{propertyId}
+     * @allow (get, list) if the authenticated user is a member of the property.
+     *  Example: User with UID 'user123' can read the property if 'user123' exists as a key in the 'members' map.
+     * @allow (create) if the user is creating and is setting up the members map with their id with role owner
+     *  Example: User with UID 'user123' can create property and their id exists as a key in the 'members' map.
+     * @allow (update, delete) if the authenticated user is the owner of the property.
+     *  Example: User with UID 'user123' can update or delete the property if resource.data.members.user123 == 'owner'.
+     * @deny (create, update, delete) if the authenticated user is not a member of the property or not the owner.
+     *  Example: User with UID 'user456' cannot update or delete the property if resource.data.members.user456 != 'owner'.
+     * @principle Enforces role-based access control for properties using the 'members' map.
+     */
+    match /properties/{propertyId} {
+      allow get, list: if isMember(propertyId);
+      allow create: if request.auth != null && request.resource.data.members[request.auth.uid] == 'owner';
+      allow update: if isExistingOwner(propertyId);
+      allow delete: if isExistingOwner(propertyId);
+    }
+
+    /**
+     * @description Controls access to locations within a property. Access is determined by membership in the parent property.
+     * @path /properties/{propertyId}/locations/{locationId}
+     * @allow (get, list) if the authenticated user is a member of the property.
+     *  Example: User with UID 'user123' can read a location if they are a member of the property containing the location.
+     * @allow (create, update, delete) if the authenticated user is a member of the property with 'editor' or 'owner' role.
+     *  Example: User with UID 'user123' can create, update, or delete a location if resource.data.members.user123 == 'editor' or resource.data.members.user123 == 'owner'.
+     * @deny (create, update, delete) if the authenticated user is not a member of the property or does not have sufficient permissions.
+     *  Example: User with UID 'user456' cannot update or delete a location if they are not a member of the property or their role is 'viewer'.
+     * @principle Enforces role-based access control for locations based on property membership.
+     */
+    match /properties/{propertyId}/locations/{locationId} {
+      allow get, list: if isMember(propertyId);
+      allow create, update, delete: if isEditorOrOwner(propertyId);
+    }
+
+    /**
+     * @description Controls access to items within a property. Access is determined by membership in the parent property.
+     * @path /properties/{propertyId}/items/{itemId}
+     * @allow (get, list) if the authenticated user is a member of the property.
+     *  Example: User with UID 'user123' can read an item if they are a member of the property containing the item.
+     * @allow (create, update, delete) if the authenticated user is a member of the property with 'editor' or 'owner' role.
+     *  Example: User with UID 'user123' can create, update, or delete an item if resource.data.members.user123 == 'editor' or resource.data.members.user123 == 'owner'.
+     * @deny (create, update, delete) if the authenticated user is not a member of the property or does not have sufficient permissions.
+     *  Example: User with UID 'user456' cannot update or delete an item if they are not a member of the property or their role is 'viewer'.
+     * @principle Enforces role-based access control for items based on property membership.
+     */
+    match /properties/{propertyId}/items/{itemId} {
+      allow get, list: if isMember(propertyId);
+      allow create, update, delete: if isEditorOrOwner(propertyId);
+    }
+
+    /**
+     * @description Controls access to item locations within a property and item. Access is determined by membership in the parent property.
+     * @path /properties/{propertyId}/items/{itemId}/item_locations/{itemLocationId}
+     * @allow (get, list) if the authenticated user is a member of the property.
+     *  Example: User with UID 'user123' can read an item location if they are a member of the property containing the item location.
+     * @allow (create, update, delete) if the authenticated user is a member of the property with 'editor' or 'owner' role.
+     *  Example: User with UID 'user123' can create, update, or delete an item location if resource.data.members.user123 == 'editor' or resource.data.members.user123 == 'owner'.
+     * @deny (create, update, delete) if the authenticated user is not a member of the property or does not have sufficient permissions.
+     *  Example: User with UID 'user456' cannot update or delete an item location if they are not a member of the property or their role is 'viewer'.
+     * @principle Enforces role-based access control for item locations based on property membership.
+     */
+    match /properties/{propertyId}/items/{itemId}/item_locations/{itemLocationId} {
+      allow get, list: if isMember(propertyId);
+      allow create, update, delete: if isEditorOrOwner(propertyId);
+    }
+
+    /**
+     * @description Controls access to tags within a property. Access is determined by membership in the parent property.
+     * @path /properties/{propertyId}/tags/{tagId}
+     * @allow (get, list) if the authenticated user is a member of the property.
+     *  Example: User with UID 'user123' can read a tag if they are a member of the property containing the tag.
+     * @allow (create, update, delete) if the authenticated user is a member of the property with 'editor' or 'owner' role.
+     *  Example: User with UID 'user123' can create, update, or delete a tag if resource.data.members.user123 == 'editor' or resource.data.members.user123 == 'owner'.
+     * @deny (create, update, delete) if the authenticated user is not a member of the property or does not have sufficient permissions.
+     *  Example: User with UID 'user456' cannot update or delete a tag if they are not a member of the property or their role is 'viewer'.
+     * @principle Enforces role-based access control for tags based on property membership.
+     */
+    match /properties/{propertyId}/tags/{tagId} {
+      allow get, list: if isMember(propertyId);
+      allow create, update, delete: if isEditorOrOwner(propertyId);
+    }
+
+    /**
+     * @description Controls access to item tags within a property and item. Access is determined by membership in the parent property.
+     * @path /properties/{propertyId}/items/{itemId}/item_tags/{itemTagId}
+     * @allow (get, list) if the authenticated user is a member of the property.
+     *  Example: User with UID 'user123' can read an item tag if they are a member of the property containing the item tag.
+     * @allow (create, update, delete) if the authenticated user is a member of the property with 'editor' or 'owner' role.
+     *  Example: User with UID 'user123' can create, update, or delete an item tag if resource.data.members.user123 == 'editor' or resource.data.members.user123 == 'owner'.
+     * @deny (create, update, delete) if the authenticated user is not a member of the property or does not have sufficient permissions.
+     *  Example: User with UID 'user456' cannot update or delete an item tag if they are not a member of the property or their role is 'viewer'.
+     * @principle Enforces role-based access control for item tags based on property membership.
+     */
+    match /properties/{propertyId}/items/{itemId}/item_tags/{itemTagId} {
+      allow get, list: if isMember(propertyId);
+      allow create, update, delete: if isEditorOrOwner(propertyId);
+    }
+
+    /**
+     * @description Controls access to photos associated with items within a property and item. Access is determined by membership in the parent property.
+     * @path /properties/{propertyId}/items/{itemId}/photos/{photoId}
+     * @allow (get, list) if the authenticated user is a member of the property.
+     *  Example: User with UID 'user123' can read a photo if they are a member of the property containing the photo.
+     * @allow (create, update, delete) if the authenticated user is a member of the property with 'editor' or 'owner' role.
+     *  Example: User with UID 'user123' can create, update, or delete a photo if resource.data.members.user123 == 'editor' or resource.data.members.user123 == 'owner'.
+     * @deny (create, update, delete) if the authenticated user is not a member of the property or does not have sufficient permissions.
+     *  Example: User with UID 'user456' cannot update or delete a photo if they are not a member of the property or their role is 'viewer'.
+     * @principle Enforces role-based access control for photos based on property membership.
+     */
+    match /properties/{propertyId}/items/{itemId}/photos/{photoId} {
+      allow get, list: if isMember(propertyId);
+      allow create, update, delete: if isEditorOrOwner(propertyId);
+    }
+
+    /**
+     * @description Controls access to photos associated with locations within a property and location. Access is determined by membership in the parent property.
+     * @path /properties/{propertyId}/locations/{locationId}/photos/{photoId}
+     * @allow (get, list) if the authenticated user is a member of the property.
+     *  Example: User with UID 'user123' can read a photo if they are a member of the property containing the photo.
+     * @allow (create, update, delete) if the authenticated user is a member of the property with 'editor' or 'owner' role.
+     *  Example: User with UID 'user123' can create, update, or delete a photo if resource.data.members.user123 == 'editor' or resource.data.members.user123 == 'owner'.
+     * @deny (create, update, delete) if the authenticated user is not a member of the property or does not have sufficient permissions.
+     *  Example: User with UID 'user456' cannot update or delete a photo if they are not a member of the property or their role is 'viewer'.
+     * @principle Enforces role-based access control for photos based on property membership.
+     */
+    match /properties/{propertyId}/locations/{locationId}/photos/{photoId} {
+      allow get, list: if isMember(propertyId);
+      allow create, update, delete: if isEditorOrOwner(propertyId);
+    }
+
+    /**
+     * @description Controls access to barcodes within a property. Access is determined by membership in the parent property.
+     * @path /properties/{propertyId}/barcodes/{barcodeId}
+     * @allow (get, list) if the authenticated user is a member of the property.
+     *  Example: User with UID 'user123' can read a barcode if they are a member of the property containing the barcode.
+     * @allow (create, update, delete) if the authenticated user is a member of the property with 'editor' or 'owner' role.
+     *  Example: User with UID 'user123' can create, update, or delete a barcode if resource.data.members.user123 == 'editor' or resource.data.members.user123 == 'owner'.
+     * @deny (create, update, delete) if the authenticated user is not a member of the property or does not have sufficient permissions.
+     *  Example: User with UID 'user456' cannot update or delete a barcode if they are not a member of the property or their role is 'viewer'.
+     * @principle Enforces role-based access control for barcodes based on property membership.
+     */
+    match /properties/{propertyId}/barcodes/{barcodeId} {
+      allow get, list: if isMember(propertyId);
+      allow create, update, delete: if isEditorOrOwner(propertyId);
+    }
+
+    /**
+     * @description Controls access to move logs for items within a property and item. Access is determined by membership in the parent property.
+     * @path /properties/{propertyId}/items/{itemId}/move_logs/{moveLogId}
+     * @allow (get, list) if the authenticated user is a member of the property.
+     *  Example: User with UID 'user123' can read a move log if they are a member of the property containing the move log.
+     * @allow (create, update, delete) if the authenticated user is a member of the property with 'editor' or 'owner' role.
+     *  Example: User with UID 'user123' can create, update, or delete a move log if resource.data.members.user123 == 'editor' or resource.data.members.user123 == 'owner'.
+     * @deny (create, update, delete) if the authenticated user is not a member of the property or does not have sufficient permissions.
+     *  Example: User with UID 'user456' cannot update or delete a move log if they are not a member of the property or their role is 'viewer'.
+     * @principle Enforces role-based access control for move logs based on property membership.
+     */
+    match /properties/{propertyId}/items/{itemId}/move_logs/{moveLogId} {
+      allow get, list: if isMember(propertyId);
+      allow create, update, delete: if isEditorOrOwner(propertyId);
+    }
+
+    // --- Helper functions ---
+
+    /**
      * @description Checks if the user is signed in.
+     * @return True if the user is signed in, false otherwise.
      */
     function isSignedIn() {
       return request.auth != null;
     }
 
     /**
-     * @description Checks if the user is the owner of the document, based on the provided userId.
+     * @description Checks if the authenticated user's ID matches the given userId.
+     * @param userId The user ID to compare against.
+     * @return True if the user is signed in and their UID matches the userId, false otherwise.
      */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
     /**
-     * @description Checks if the user is the owner of an existing document.
+     * @description Checks if the authenticated user is a member of the property.
+     * @param propertyId The ID of the property to check.
+     * @return True if the user is in the 'members' map of the property document, false otherwise.
      */
-    function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+    function isMember(propertyId) {
+      return isSignedIn() && get(/databases/$(database)/documents/properties/$(propertyId)).data.members[request.auth.uid] != null;
     }
 
     /**
-     * @description Allows the user to create their own user document.
-     * @path /users/{userId}
-     * @allow (create) - User with UID 'user_abc' can create document /users/user_abc
-     * @deny (create) - User with UID 'user_abc' cannot create document /users/user_xyz
-     * @principle Enforces user-ownership for user profiles.
+     * @description Checks if the authenticated user is an editor or owner of the property.
+     * @param propertyId The ID of the property to check.
+     * @return True if the user is in the 'members' map of the property document with role 'editor' or 'owner', false otherwise.
      */
-    match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isOwner(userId) && request.resource.data.id == request.auth.uid;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId);
+    function isEditorOrOwner(propertyId) {
+      return isSignedIn() && (get(/databases/$(database)/documents/properties/$(propertyId)).data.members[request.auth.uid] == 'editor' || get(/databases/$(database)/documents/properties/$(propertyId)).data.members[request.auth.uid] == 'owner');
     }
 
-    /**
-     * @description Controls access to property documents.
-     * @path /properties/{propertyId}
+        /**
+     * @description Checks if the authenticated user is the owner of the property and the document exists.
+     * @param propertyId The ID of the property to check.
+     * @return True if the user is in the 'members' map of the property document with role 'owner' and resource exists, false otherwise.
      */
-    match /properties/{propertyId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn(); // Any authenticated user can create a property
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-    }
-
-    /**
-     * @description Controls access to location documents within a property.
-     * @path /properties/{propertyId}/locations/{locationId}
-     */
-    match /properties/{propertyId}/locations/{locationId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn(); // Any authenticated user can create a location
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-    }
-
-    /**
-     * @description Controls access to item documents within a property.
-     * @path /properties/{propertyId}/items/{itemId}
-     */
-    match /properties/{propertyId}/items/{itemId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn(); // Any authenticated user can create an item
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-    }
-
-    /**
-     * @description Controls access to itemLocation documents within a property and item.
-     * @path /properties/{propertyId}/items/{itemId}/itemLocations/{itemLocationId}
-     */
-    match /properties/{propertyId}/items/{itemId}/itemLocations/{itemLocationId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn(); // Any authenticated user can create an itemLocation
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-    }
-
-    /**
-     * @description Controls access to tag documents within a property.
-     * @path /properties/{propertyId}/tags/{tagId}
-     */
-    match /properties/{propertyId}/tags/{tagId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn(); // Any authenticated user can create a tag
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-    }
-
-    /**
-     * @description Controls access to itemTag documents within a property and item.
-     * @path /properties/{propertyId}/items/{itemId}/itemTags/{itemTagId}
-     */
-    match /properties/{propertyId}/items/{itemId}/itemTags/{itemTagId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn(); // Any authenticated user can create an itemTag
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-    }
-
-    /**
-     * @description Controls access to photo documents within a property.
-     * @path /properties/{propertyId}/photos/{photoId}
-     */
-    match /properties/{propertyId}/photos/{photoId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn(); // Any authenticated user can create a photo
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-    }
-
-    /**
-     * @description Controls access to barcode documents within a property.
-     * @path /properties/{propertyId}/barcodes/{barcodeId}
-     */
-    match /properties/{propertyId}/barcodes/{barcodeId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn(); // Any authenticated user can create a barcode
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-    }
-
-    /**
-     * @description Controls access to moveLog documents within a property.
-     * @path /properties/{propertyId}/moveLogs/{moveLogId}
-     */
-    match /properties/{propertyId}/moveLogs/{moveLogId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn(); // Any authenticated user can create a moveLog
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-    }
-
-    /**
-     * @description Controls access to propertyMember documents.
-     * @path /propertyMembers/{propertyMemberId}
-     */
-    match /propertyMembers/{propertyMemberId} {
-      allow get: if isSignedIn();
-      allow list: if false;
-      allow create: if isSignedIn();
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+    function isExistingOwner(propertyId) {
+      return isSignedIn()
+          && get(/databases/$(database)/documents/properties/$(propertyId)).data.members[request.auth.uid] == 'owner'
+          && resource != null;
     }
   }
 }
