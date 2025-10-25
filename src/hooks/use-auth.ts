@@ -16,14 +16,8 @@ export function useAuth() {
     
     setIsLoggingIn(true);
     try {
-      // First, sign out any existing user to ensure a clean login flow.
-      if (auth.currentUser) {
-        await signOut(auth);
-      }
-      
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      
       const userDocRef = doc(firestore, 'users', result.user.uid);
       const userDoc = await getDoc(userDocRef);
 
