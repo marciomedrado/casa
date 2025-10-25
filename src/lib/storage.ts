@@ -61,7 +61,7 @@ export function saveProperty(property: Omit<Property, 'id' | 'imageUrl' | 'image
     if (property.id) { // Update
         const index = properties.findIndex(p => p.id === property.id);
         if (index !== -1) {
-            properties[index] = { ...properties[index], ...property };
+            properties[index] = { ...properties[index], name: property.name, address: property.address };
             saveToStorage(PROPERTIES_KEY, properties);
             return properties[index];
         }
@@ -76,6 +76,17 @@ export function saveProperty(property: Omit<Property, 'id' | 'imageUrl' | 'image
     const updatedProperties = [...properties, newProperty];
     saveToStorage(PROPERTIES_KEY, updatedProperties);
     return newProperty;
+}
+
+export function deleteProperty(propertyId: string): void {
+    const properties = getProperties().filter(p => p.id !== propertyId);
+    saveToStorage(PROPERTIES_KEY, properties);
+
+    const locations = getFromStorage<Omit<Location, 'children'>>(LOCATIONS_KEY).filter(l => l.propertyId !== propertyId);
+    saveToStorage(LOCATIONS_KEY, locations);
+
+    const items = getFromStorage<Item>(ITEMS_KEY).filter(i => i.propertyId !== propertyId);
+    saveToStorage(ITEMS_KEY, items);
 }
 
 

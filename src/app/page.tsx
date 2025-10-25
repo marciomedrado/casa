@@ -8,7 +8,7 @@ import { PropertyCard } from '@/components/dashboard/property-card';
 import { Header } from '@/components/layout/header';
 import { AddPropertyDialog } from '@/components/dashboard/add-property-dialog';
 import type { Property } from '@/lib/types';
-import { initializeDatabase, getProperties, saveProperty } from '@/lib/storage';
+import { initializeDatabase, getProperties, saveProperty, deleteProperty } from '@/lib/storage';
 
 export default function Dashboard() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -30,6 +30,12 @@ export default function Dashboard() {
     }
   };
 
+  const handlePropertyDelete = (propertyId: string) => {
+    deleteProperty(propertyId);
+    setProperties(prev => prev.filter(p => p.id !== propertyId));
+  };
+
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
@@ -46,7 +52,13 @@ export default function Dashboard() {
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {properties.map((property) => (
-            <PropertyCard key={property.id} property={property} />
+            <PropertyCard 
+              key={property.id} 
+              property={property} 
+              onEdit={() => { /* This will be handled by the dialog inside the card now */}}
+              onDelete={handlePropertyDelete}
+              onPropertySave={handlePropertySave}
+            />
           ))}
         </div>
       </main>
