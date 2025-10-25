@@ -55,7 +55,7 @@ export function ItemBrowser({
          if (!doorItems[item.subContainer.number]) {
           doorItems[item.subContainer.number] = [];
         }
-        doorItems[item.subContainer.number].push(item);
+        doorItems[Number(item.subContainer.number)].push(item);
       } else {
         looseItems.push(item);
       }
@@ -203,7 +203,7 @@ export function ItemBrowser({
           </>
         ) : (
           // Root view
-          <ItemList items={looseItems} onContainerClick={handleContainerClick} onItemSave={onItemSave} onItemDelete={onItemDelete} locations={allLocations} />
+          <ItemList items={visibleItems} onContainerClick={handleContainerClick} onItemSave={onItemSave} onItemDelete={onItemDelete} locations={allLocations} />
         )}
       </div>
     </div>
