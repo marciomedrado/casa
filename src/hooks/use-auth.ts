@@ -27,7 +27,6 @@ export function useAuth() {
   // 2. useEffect para tratar o resultado do redirecionamento
   useEffect(() => {
     // Só executa se o auth e firestore estiverem disponíveis e o estado inicial do usuário tiver sido carregado
-    // isUserLoading é importante para garantir que o listener onAuthStateChanged já rodou
     if (!auth || !firestore || isUserLoading) return;
 
     const handleRedirectResult = async () => {
@@ -57,22 +56,18 @@ export function useAuth() {
               createdAt: serverTimestamp(),
             });
           }
-          // O onAuthStateChanged do provider.tsx deve pegar o usuário e redirecionar,
-          // mas forçamos o redirecionamento para garantir a navegação.
+          // Redireciona para a página inicial após o processamento
           router.push('/');
         }
       } catch (error) {
         console.error('Error processing redirect result:', error);
-        // O erro auth/popup-closed-by-user não deve ocorrer aqui, mas outros erros de auth podem.
       } finally {
-        // O isLoggingIn é resetado aqui para cobrir o caso de um erro no getRedirectResult
-        // ou quando o resultado é nulo (usuário não logou).
         setIsLoggingIn(false); 
       }
     };
     
     handleRedirectResult();
-  }, [auth, firestore, isUserLoading, router, user]); // Adicionei 'user' às dependências para melhor controle
+  }, [auth, firestore, isUserLoading, router, user]);
 
   const logout = useCallback(async () => {
     if (!auth) return;
@@ -84,4 +79,3 @@ export function useAuth() {
 
   return { user, login, logout, loading, error: userError, isLoggingIn };
 }
-```<ctrl95><ctrl42>call:default_api:file{action:
