@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, Search, Upload, Download } from 'lucide-react';
+import { Home, Search, Upload, Download, Settings } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -144,7 +144,12 @@ export function Header({
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>{MOCK_USER.name}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => toast({ title: "Em breve!", description: "A página de configurações está em desenvolvimento." })}>Configurações</DropdownMenuItem>
+            <Link href="/settings" passHref>
+              <DropdownMenuItem>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Configurações</span>
+              </DropdownMenuItem>
+            </Link>
             <DropdownMenuItem onClick={handleBackup}>
               <Download className="mr-2 h-4 w-4" />
               <span>Fazer Backup</span>
