@@ -17,7 +17,7 @@ import {
 import type { Location } from '@/lib/types';
 import { Header } from './header';
 import { LocationTree } from '../inventory/location-tree';
-import { PlusCircle, LayoutGrid } from 'lucide-react';
+import { PlusCircle, LayoutGrid, List } from 'lucide-react';
 import { AddLocationDialog } from '../inventory/add-location-dialog';
 
 export function AppLayout({
@@ -31,6 +31,7 @@ export function AppLayout({
   onLocationSave,
   searchQuery,
   setSearchQuery,
+  viewMode,
 }: {
   children: React.ReactNode;
   pageTitle: string;
@@ -38,10 +39,11 @@ export function AppLayout({
   allRawLocations: Location[];
   propertyId: string;
   selectedLocationId: string | null;
-  onLocationSelect: (id: string | null) => void;
+  onLocationSelect: (id: string | null, mode?: 'items' | 'all-locations') => void;
   onLocationSave: (location: Omit<Location, 'children' | 'propertyId'> & { id?: string }) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  viewMode: 'items' | 'all-locations';
 }) {
   return (
     <SidebarProvider>
@@ -53,14 +55,14 @@ export function AppLayout({
           <SidebarGroup>
             <SidebarMenu>
                <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => onLocationSelect(null)} isActive={selectedLocationId === null} tooltip="Todos os Locais">
+                <SidebarMenuButton onClick={() => onLocationSelect(null, 'all-locations')} isActive={viewMode === 'all-locations' && selectedLocationId === null} tooltip="Todos os Locais">
                   <LayoutGrid />
                   <span>Todos os Locais</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => onLocationSelect(null)} isActive={selectedLocationId === null} tooltip="Todos os Itens">
-                  <LayoutGrid />
+                <SidebarMenuButton onClick={() => onLocationSelect(null, 'items')} isActive={viewMode === 'items' && selectedLocationId === null} tooltip="Todos os Itens">
+                  <List />
                   <span>Todos os Itens</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>

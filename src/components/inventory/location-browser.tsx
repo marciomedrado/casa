@@ -1,0 +1,31 @@
+
+'use client';
+
+import { LocationCard } from './location-card';
+import type { Location } from '@/lib/types';
+
+export function LocationBrowser({ 
+    locations,
+    onLocationSelect
+}: { 
+    locations: Location[],
+    onLocationSelect: (id: string) => void
+}) {
+  return (
+    <div>
+       <h2 className="text-2xl font-bold tracking-tight mb-8">Navegar por Local</h2>
+      {locations.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 text-center p-12 min-h-[200px]">
+          <h3 className="text-xl font-semibold">Nenhum local encontrado</h3>
+          <p className="text-muted-foreground mt-2">Comece a organizar adicionando seu primeiro local na barra lateral.</p>
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {locations.map((location) => (
+            <LocationCard key={location.id} location={location} onLocationSelect={onLocationSelect} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

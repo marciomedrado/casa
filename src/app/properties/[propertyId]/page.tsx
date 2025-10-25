@@ -8,6 +8,9 @@ import { ItemBrowser } from '@/components/inventory/item-browser';
 import { notFound, useParams } from 'next/navigation';
 import type { Location, Item } from '@/lib/types';
 import * as storage from '@/lib/storage';
+import { LocationBrowser } from '@/components/inventory/location-browser';
+
+type ViewMode = 'all-locations' | 'items';
 
 export default function PropertyPage() {
   const params = useParams();
@@ -18,6 +21,7 @@ export default function PropertyPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [allPropertyLocations, setAllPropertyLocations] = useState<Location[]>([]);
   const [allItems, setAllItems] = useState<Item[]>([]);
+  const [viewMode, setViewMode] = useState<ViewMode>('all-locations');
 
   useEffect(() => {
     storage.initializeDatabase();
@@ -32,7 +36,11 @@ export default function PropertyPage() {
     }
   }, [propertyId]);
 
-  const locationTree = useMemo(() => buildLocationTree(allPropertyLocations), [allPropertyLocations]);
+  const { locationTree, rootLocations } = useMemo(() => {
+    const tree = buildLocationTree(allPropertyLocations);
+    const roots = tree.filter(l => l.parentId === null);
+    return { locationTree: tree, rootLocations: roots };
+  }, [allPropertyLocations]);
 
   const handleItemSave = (itemToSave: Item) => {
     const savedItem = storage.saveItem(itemToSave, propertyId);
@@ -72,9 +80,18 @@ export default function PropertyPage() {
     return allIds;
   };
 
+  const handleLocationSelect = (id: string | null, mode: ViewMode = 'items') => {
+      setSelectedLocationId(id);
+      setViewMode(mode);
+  }
+
   const { filteredItems, selectedLocationName } = useMemo(() => {
     let items = allItems;
-    let selectedLocationName = 'Todos os Itens';
+    let selectedLocationName = property?.name ?? 'Todos os Itens';
+    if (viewMode === 'all-locations') {
+        selectedLocationName = property?.name ?? 'Todos os Locais';
+    }
+
 
     if (selectedLocationId) {
       const locationIds = getSubLocationIds(selectedLocationId);
@@ -85,7 +102,7 @@ export default function PropertyPage() {
     
     if (searchQuery) {
         const lowerCaseQuery = searchQuery.toLowerCase();
-        items = items.filter(item => 
+        items = allItems.filter(item => 
             item.name.toLowerCase().includes(lowerCaseQuery) ||
             item.description.toLowerCase().includes(lowerCaseQuery) ||
             (item.tags && item.tags.some(tag => tag.toLowerCase().includes(lowerCaseQuery)))
@@ -96,10 +113,12 @@ export default function PropertyPage() {
         } else {
           selectedLocationName = `Resultados para "${searchQuery}"`;
         }
+        // Force items view when searching
+        if(viewMode !== 'items' && searchQuery) setViewMode('items');
     }
     
     return { filteredItems: items, selectedLocationName };
-  }, [selectedLocationId, searchQuery, allItems, allPropertyLocations]);
+  }, [selectedLocationId, searchQuery, allItems, allPropertyLocations, viewMode, property]);
   
   if (!property) {
     return null;
@@ -112,18 +131,26 @@ export default function PropertyPage() {
       allRawLocations={allPropertyLocations}
       propertyId={property.id}
       selectedLocationId={selectedLocationId}
-      onLocationSelect={setSelectedLocationId}
+      onLocationSelect={handleLocationSelect}
       onLocationSave={handleLocationSave}
       searchQuery={searchQuery}
       setSearchQuery={setSearchQuery}
+      viewMode={viewMode}
     >
-      <ItemBrowser 
-        allItems={allItems} 
-        visibleItems={filteredItems}
-        allLocations={locationTree}
-        onItemSave={handleItemSave}
-        locationName={selectedLocationName}
-      />
+      {viewMode === 'all-locations' && !searchQuery ? (
+        <LocationBrowser 
+            locations={rootLocations}
+            onLocationSelect={(id) => handleLocationSelect(id)}
+        />
+      ) : (
+        <ItemBrowser 
+            allItems={allItems} 
+            visibleItems={filteredItems}
+            allLocations={locationTree}
+            onItemSave={handleItemSave}
+            locationName={selectedLocationName}
+        />
+      )}
     </AppLayout>
   );
 }
