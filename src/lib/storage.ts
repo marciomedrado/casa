@@ -136,10 +136,10 @@ export function getItems(propertyId?: string): Item[] {
     return allItems;
 }
 
-export function saveItem(item: Item, propertyId: string): Item {
+export function saveItem(item: Item, propertyId: string, isClone: boolean = false): Item {
     const items = getFromStorage<Item>(ITEMS_KEY);
 
-    if (items.some(i => i.id === item.id)) { // Update
+    if (item.id && !isClone && items.some(i => i.id === item.id)) { // Update
         const index = items.findIndex(i => i.id === item.id);
         if (index !== -1) {
             items[index] = { ...items[index], ...item, propertyId };
@@ -147,12 +147,17 @@ export function saveItem(item: Item, propertyId: string): Item {
             return items[index];
         }
     }
-    // Create
+
+    // Create or Clone
     const newItem = { ...item, propertyId };
-    if (!newItem.id) {
-        newItem.id = `item-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    
+    if (isClone) {
+        newItem.name = `Cópia de ${newItem.name}`;
     }
-    if (!newItem.imageUrl) {
+
+    newItem.id = `item-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    
+    if (!newItem.imageUrl || isClone) {
         newItem.imageUrl = `https://picsum.photos/seed/${newItem.id}/400/300`;
     }
 
@@ -160,6 +165,7 @@ export function saveItem(item: Item, propertyId: string): Item {
     saveToStorage(ITEMS_KEY, updatedItems);
     return newItem;
 }
+
 
 export function deleteItem(itemId: string): void {
     let items = getFromStorage<Item>(ITEMS_KEY);

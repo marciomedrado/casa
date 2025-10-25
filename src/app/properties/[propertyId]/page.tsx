@@ -55,6 +55,15 @@ export default function PropertyPage() {
     }
   };
 
+  const handleItemClone = (itemToClone: Item) => {
+    const clonedItem = storage.saveItem(itemToClone, propertyId, true);
+    setAllItems(prev => [...prev, clonedItem]);
+    toast({
+        title: "Item Clonado!",
+        description: `Uma cópia de "${itemToClone.name}" foi criada.`,
+    });
+  }
+
   const handleItemDelete = (itemId: string) => {
     storage.deleteItem(itemId);
     setAllItems(prev => prev.filter(i => i.id !== itemId));
@@ -127,11 +136,12 @@ export default function PropertyPage() {
   }
 
   const { filteredItems, selectedLocationName } = useMemo(() => {
-    let items = allItems;
+    let items: Item[] = [];
     let selectedLocationName = property?.name ?? 'Visão Geral';
     
     if (viewMode === 'all-locations') {
         selectedLocationName = property?.name ?? 'Todos os Cômodos';
+        items = []; // Locations are shown, not items
     } else if (viewMode === 'all-containers') {
         items = allItems.filter(item => item.isContainer);
         selectedLocationName = 'Todos os Containers';
@@ -143,7 +153,7 @@ export default function PropertyPage() {
 
     if (selectedLocationId) {
       const locationIds = getSubLocationIds(selectedLocationId);
-      items = items.filter(item => locationIds.includes(item.locationId));
+      items = allItems.filter(item => locationIds.includes(item.locationId));
       const loc = allPropertyLocations.find(l => l.id === selectedLocationId);
       if (loc) selectedLocationName = loc.name;
     }
@@ -170,15 +180,28 @@ export default function PropertyPage() {
   
   if (isLoading) {
     return (
-        <div className="p-8">
-            <Skeleton className="h-8 w-1/4 mb-4" />
-            <Skeleton className="h-4 w-1/2" />
-            <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                <Skeleton className="h-48 w-full" />
-                <Skeleton className="h-48 w-full" />
-                <Skeleton className="h-48 w-full" />
+        <AppLayout 
+          pageTitle="Carregando..."
+          locations={[]}
+          allRawLocations={[]}
+          propertyId={propertyId}
+          selectedLocationId={null}
+          onLocationSelect={() => {}}
+          onLocationSave={() => {}}
+          searchQuery=""
+          setSearchQuery={() => {}}
+          viewMode="items"
+        >
+            <div className="p-8">
+                <Skeleton className="h-8 w-1/4 mb-4" />
+                <Skeleton className="h-4 w-1/2" />
+                <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    <Skeleton className="h-48 w-full" />
+                    <Skeleton className="h-48 w-full" />
+                    <Skeleton className="h-48 w-full" />
+                </div>
             </div>
-        </div>
+        </AppLayout>
     )
   }
 
@@ -217,6 +240,7 @@ export default function PropertyPage() {
             allLocations={locationTree}
             onItemSave={handleItemSave}
             onItemDelete={handleItemDelete}
+            onItemClone={handleItemClone}
             locationName={selectedLocationName}
         />
       )}

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { AddItemDialog } from './add-item-dialog';
 
-export function ItemList({ items, onContainerClick, parentContainer, onItemSave, onItemDelete, locations, allItems }: { items: Item[], onContainerClick: (itemId: string) => void; parentContainer?: Item | null, onItemSave: (item: Item) => void, onItemDelete: (itemId: string) => void, locations: Location[], allItems: Item[] }) {
+export function ItemList({ items, onContainerClick, parentContainer, onItemSave, onItemDelete, onItemClone, locations, allItems }: { items: Item[], onContainerClick: (itemId: string) => void; parentContainer?: Item | null, onItemSave: (item: Item) => void, onItemDelete: (itemId: string) => void, onItemClone: (item: Item) => void, locations: Location[], allItems: Item[] }) {
   return (
     <div>
       {items.length === 0 ? (
@@ -23,7 +23,7 @@ export function ItemList({ items, onContainerClick, parentContainer, onItemSave,
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {items.map((item) => (
-            <ItemCard key={item.id} item={item} onContainerClick={onContainerClick} parentContainer={parentContainer} onItemSave={onItemSave} onItemDelete={onItemDelete} locations={locations} allItems={allItems} />
+            <ItemCard key={item.id} item={item} onContainerClick={onContainerClick} parentContainer={parentContainer} onItemSave={onItemSave} onItemDelete={onItemDelete} onItemClone={onItemClone} locations={locations} allItems={allItems} />
           ))}
         </div>
       )}

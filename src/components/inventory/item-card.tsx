@@ -5,7 +5,7 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Item, Location } from '@/lib/types';
-import { MapPin, Pencil, PackageOpen, Eye, Trash2 } from 'lucide-react';
+import { MapPin, Pencil, PackageOpen, Eye, Trash2, Copy } from 'lucide-react';
 import { AddItemDialog } from './add-item-dialog';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
@@ -22,7 +22,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
-export function ItemCard({ item, onContainerClick, onItemSave, onItemDelete, locations, allItems }: { item: Item, onContainerClick: (itemId: string) => void, parentContainer?: Item | null, onItemSave: (item: Item) => void, onItemDelete: (itemId: string) => void, locations: Location[], allItems: Item[] }) {
+export function ItemCard({ item, onContainerClick, onItemSave, onItemDelete, onItemClone, locations, allItems }: { item: Item, onContainerClick: (itemId: string) => void, parentContainer?: Item | null, onItemSave: (item: Item) => void, onItemDelete: (itemId: string) => void, onItemClone: (item: Item) => void, locations: Location[], allItems: Item[] }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
@@ -103,6 +103,18 @@ export function ItemCard({ item, onContainerClick, onItemSave, onItemDelete, loc
                       <Pencil className="h-4 w-4" />
                       <span className="sr-only">Editar Item</span>
                     </Button>
+                  <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                          e.stopPropagation();
+                          onItemClone(item);
+                      }}
+                      className="rounded-full h-8 w-8"
+                  >
+                      <Copy className="h-4 w-4" />
+                      <span className="sr-only">Clonar Item</span>
+                  </Button>
                    <AlertDialog>
                       <AlertDialogTrigger asChild>
                          <Button

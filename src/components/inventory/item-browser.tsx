@@ -15,15 +15,17 @@ export function ItemBrowser({
   allItems, 
   visibleItems,
   allLocations,
-  onItemSave, // Receive the save handler
+  onItemSave,
   onItemDelete,
+  onItemClone,
   locationName,
 }: { 
   allItems: Item[],
   visibleItems: Item[],
   allLocations: Location[],
-  onItemSave: (item: Item) => void, // Define the prop type
+  onItemSave: (item: Item) => void,
   onItemDelete: (itemId: string) => void,
+  onItemClone: (item: Item) => void,
   locationName: string,
 }) {
   const [currentContainerId, setCurrentContainerId] = useState<string | null>(null);
@@ -45,6 +47,11 @@ export function ItemBrowser({
     const doorItems: { [key: number]: Item[] } = {};
 
     itemsToProcess.forEach(item => {
+      // This check is important: only process items that are direct children of the current container.
+      if (currentContainerId && item.parentId !== currentContainerId) {
+          return;
+      }
+      
       if (item.subContainer?.type === 'drawer') {
         if (!drawerItems[item.subContainer.number]) {
           drawerItems[item.subContainer.number] = [];
@@ -55,7 +62,8 @@ export function ItemBrowser({
           doorItems[Number(item.subContainer.number)] = [];
         }
         doorItems[Number(item.subContainer.number)].push(item);
-      } else {
+      } else if (!currentContainerId || item.parentId === currentContainerId) {
+        // Only add to loose items if it's in the root view OR a direct child of the container
         looseItems.push(item);
       }
     });
@@ -106,7 +114,7 @@ export function ItemBrowser({
         {icon}
         <h3 className="text-lg font-semibold">{title}</h3>
       </div>
-      <ItemList items={items} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={onItemSave} onItemDelete={onItemDelete} locations={allLocations} allItems={allItems} />
+      <ItemList items={items} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={onItemSave} onItemDelete={onItemDelete} onItemClone={onItemClone} locations={allLocations} allItems={allItems} />
     </div>
   );
   
@@ -179,13 +187,11 @@ export function ItemBrowser({
              {looseItems.length > 0 && (Object.keys(doorItems).length > 0 || Object.keys(drawerItems).length > 0) && (
               <>
                 <Separator className="my-8" />
+                <h3 className="text-lg font-semibold mb-4">Itens Soltos</h3>
               </>
             )}
             {looseItems.length > 0 && (
-              <>
-                <h3 className="text-lg font-semibold mb-4">Itens Soltos</h3>
-                <ItemList items={looseItems} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={onItemSave} onItemDelete={onItemDelete} locations={allLocations} allItems={allItems} />
-              </>
+              <ItemList items={looseItems} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={onItemSave} onItemDelete={onItemDelete} onItemClone={onItemClone} locations={allLocations} allItems={allItems} />
             )}
             {
               Object.keys(doorItems).length === 0 &&
@@ -206,7 +212,7 @@ export function ItemBrowser({
           </>
         ) : (
           // Root view
-          <ItemList items={visibleItems} onContainerClick={handleContainerClick} onItemSave={onItemSave} onItemDelete={onItemDelete} locations={allLocations} allItems={allItems} />
+          <ItemList items={visibleItems} onContainerClick={handleContainerClick} onItemSave={onItemSave} onItemDelete={onItemDelete} onItemClone={onItemClone} locations={allLocations} allItems={allItems} />
         )}
       </div>
     </div>
