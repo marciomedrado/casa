@@ -5,16 +5,13 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { buildLocationTree } from '@/lib/data';
 import { AppLayout } from '@/components/layout/app-layout';
 import { ItemBrowser } from '@/components/inventory/item-browser';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import type { Location, Item } from '@/lib/types';
 import * as storage from '@/lib/storage';
 
-function generateRandomId(prefix: string) {
-    return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-}
-
-export default function PropertyPage({ params }: { params: { propertyId: string } }) {
-  const { propertyId } = React.use(params);
+export default function PropertyPage() {
+  const params = useParams();
+  const propertyId = params.propertyId as string;
   
   const [property, setProperty] = useState<Item | undefined>(undefined);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
