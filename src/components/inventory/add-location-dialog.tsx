@@ -57,7 +57,7 @@ export function AddLocationDialog({ children, propertyId, locations, locationToE
              toast({
                 variant: 'destructive',
                 title: 'Erro de Validação',
-                description: 'O nome do local não pode ser vazio.',
+                description: 'O nome do cômodo não pode ser vazio.',
             });
             return;
         }
@@ -71,7 +71,7 @@ export function AddLocationDialog({ children, propertyId, locations, locationToE
         });
 
         toast({
-            title: isEditMode ? "Local Atualizado!" : "Local Adicionado!",
+            title: isEditMode ? "Cômodo Atualizado!" : "Cômodo Adicionado!",
             description: `"${name}" foi ${isEditMode ? 'atualizado' : 'adicionado'}.`,
         });
         setOpen(false);
@@ -84,11 +84,11 @@ export function AddLocationDialog({ children, propertyId, locations, locationToE
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? 'Editar Local' : 'Adicionar Novo Local'}</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Editar Cômodo' : 'Adicionar Novo Cômodo'}</DialogTitle>
           <DialogDescription>
             {isEditMode 
-              ? 'Atualize os detalhes do local. Clique em salvar para aplicar as mudanças.'
-              : 'Preencha os detalhes do novo local. Clique em salvar para adicioná-lo.'
+              ? 'Atualize os detalhes do seu cômodo. Clique em salvar para aplicar as mudanças.'
+              : 'Preencha os detalhes do novo cômodo. Clique em salvar para adicioná-lo.'
             }
           </DialogDescription>
         </DialogHeader>
@@ -101,11 +101,11 @@ export function AddLocationDialog({ children, propertyId, locations, locationToE
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="parentId" className="text-right">
-              Local Pai
+              Cômodo Pai
             </Label>
             <Select onValueChange={(value) => setParentId(value === 'null' ? null : value)} value={parentId ?? 'null'}>
                 <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Selecione um local pai" />
+                    <SelectValue placeholder="Selecione um cômodo pai" />
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="null">Nenhum (nível raiz)</SelectItem>

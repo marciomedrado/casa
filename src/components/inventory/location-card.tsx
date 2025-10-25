@@ -27,7 +27,7 @@ export function LocationCard({ location, onLocationSelect }: { location: Locatio
       </CardHeader>
       <CardContent className="flex-grow"></CardContent>
        <div className="p-4 pt-0 mt-auto flex items-center justify-end text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-            <span className="text-sm font-medium">Abrir local</span>
+            <span className="text-sm font-medium">Abrir cômodo</span>
             <ArrowRight className="ml-2 h-4 w-4" />
         </div>
     </Card>

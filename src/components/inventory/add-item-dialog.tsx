@@ -194,7 +194,7 @@ export function AddItemDialog({
             toast({
                 variant: 'destructive',
                 title: 'Erro de Validação',
-                description: 'Por favor, selecione um local para o item.',
+                description: 'Por favor, selecione um cômodo para o item.',
             });
             return;
         }
@@ -297,11 +297,11 @@ export function AddItemDialog({
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="location" className="text-right">
-              Local
+              Cômodo
             </Label>
             <Select onValueChange={(value) => setLocationId(value)} value={locationId ?? ''} disabled={isReadOnly || !!parentContainer}>
                 <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Selecione um local" />
+                    <SelectValue placeholder="Selecione um cômodo" />
                 </SelectTrigger>
                 <SelectContent>
                     {flattenedLocations.map(loc => (
