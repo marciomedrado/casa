@@ -4,7 +4,7 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Item, Location } from '@/lib/types';
-import { MapPin, Pencil, PackageOpen, Eye, DoorOpen, Rows3, Trash2, Box } from 'lucide-react';
+import { MapPin, Pencil, PackageOpen, Eye, Trash2 } from 'lucide-react';
 import { AddItemDialog } from './add-item-dialog';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
@@ -36,35 +36,6 @@ export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, 
     } else {
       setIsViewDialogOpen(true);
     }
-  }
-  
-  const subContainerText = () => {
-    if (!item.subContainer) return null;
-    const Icon = item.subContainer.type === 'door' ? DoorOpen : Rows3;
-    const pathSegments = item.locationPath;
-    // Check if the path actually contains a sub-container part
-    if (pathSegments.length < 2) return null;
-
-    const subContainerName = pathSegments[pathSegments.length-1];
-
-    if (!subContainerName.toLowerCase().includes(item.subContainer.type)) return null;
-
-    return (
-        <div className="flex items-center text-xs text-muted-foreground mt-1">
-            <Icon className="h-3 w-3 mr-1.5" />
-            <span>{subContainerName}</span>
-        </div>
-    );
-  }
-
-  // Get the base location path, excluding any sub-container names
-  const locationDisplayPath = () => {
-      if (!item.locationPath) return '';
-      const path = [...item.locationPath];
-      if (item.subContainer) {
-          path.pop(); // remove sub-container
-      }
-      return path.join(' / ');
   }
 
   return (
@@ -172,10 +143,9 @@ export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, 
         <CardContent className="p-4 pt-0 flex-1">
           <CardTitle className="text-lg line-clamp-1 mb-2">{item.name}</CardTitle>
           <div className="flex items-center text-sm text-muted-foreground mb-1">
-              {item.parentId ? <Box className="h-4 w-4 mr-2 shrink-0" /> : <MapPin className="h-4 w-4 mr-2 shrink-0" />}
-              <span className="truncate">{locationDisplayPath()}</span>
+              <MapPin className="h-4 w-4 mr-2 shrink-0" />
+              <span className="truncate">{item.locationPath?.join(' / ') || ''}</span>
           </div>
-          {subContainerText()}
           <CardDescription className="text-sm line-clamp-2 mt-2">{item.description}</CardDescription>
         </CardContent>
         <CardFooter className="p-4 pt-0 flex flex-wrap gap-2">
