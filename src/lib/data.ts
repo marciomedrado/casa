@@ -7,13 +7,13 @@ const findImage = (id: string) => {
     return { imageUrl: img.imageUrl, imageHint: img.imageHint };
 }
 
-export let MOCK_USER: User = {
+export const MOCK_USER: User = {
     name: "Alex Silva",
     email: "alex.silva@email.com",
     avatar: "https://i.pravatar.cc/150?u=a042581f4e29026704d"
 }
 
-export let MOCK_PROPERTIES: Property[] = [
+export const MOCK_PROPERTIES: Property[] = [
   {
     id: 'prop-1',
     name: 'Casa Principal',
@@ -70,10 +70,24 @@ const locationsProp2: Location[] = [
     },
 ];
 
-export let MOCK_LOCATIONS: Location[] = [...locationsProp1, ...locationsProp2];
+export const MOCK_LOCATIONS: Location[] = [...locationsProp1, ...locationsProp2];
+
+// Flatten children for storage
+export const FLATTENED_MOCK_LOCATIONS: Omit<Location, 'children'>[] = MOCK_LOCATIONS.flatMap(l => {
+    const { children, ...rest } = l;
+    const flatChildren = children.flatMap(c1 => {
+        const { children: c1Children, ...c1Rest } = c1;
+        const flatGrandChildren = c1Children.map(c2 => {
+             const { children: c2Children, ...c2Rest } = c2;
+             return c2Rest;
+        });
+        return [c1Rest, ...flatGrandChildren];
+    });
+    return [rest, ...flatChildren];
+});
 
 
-export let MOCK_ITEMS: Item[] = [
+export const MOCK_ITEMS: Item[] = [
     {
         id: 'item-1', propertyId: 'prop-1', locationId: 'loc-1-2-1-1', name: 'Furadeira Bosch',
         description: '110V com conjunto de brocas', quantity: 1, tags: ['ferramenta', 'elétrica'],
@@ -125,7 +139,6 @@ export let MOCK_ITEMS: Item[] = [
     }
 ];
 
-// Helper to build location tree
 export const buildLocationTree = (locations: Location[], parentId: string | null = null): Location[] => {
   return locations
     .filter(location => location.parentId === parentId)
@@ -134,57 +147,3 @@ export const buildLocationTree = (locations: Location[], parentId: string | null
       children: buildLocationTree(locations, location.id),
     }));
 };
-
-export const buildItemTree = (items: Item[]): Item[] => {
-  const itemMap = new Map(items.map(item => [item.id, { ...item, children: [] }]));
-  const tree: Item[] = [];
-
-  items.forEach(item => {
-    const treeItem = itemMap.get(item.id);
-    if (!treeItem) return;
-
-    if (item.parentId && itemMap.has(item.parentId)) {
-      const parent = itemMap.get(item.parentId);
-      parent?.children?.push(treeItem);
-    } else {
-      tree.push(treeItem);
-    }
-  });
-
-  return tree;
-}
-
-// Functions to update mock data in-memory
-export const addProperty = (property: Property) => {
-  MOCK_PROPERTIES.push(property);
-};
-
-export const updateProperty = (property: Property) => {
-  const index = MOCK_PROPERTIES.findIndex(p => p.id === property.id);
-  if (index !== -1) {
-    MOCK_PROPERTIES[index] = property;
-  }
-};
-
-export const addLocation = (location: Location) => {
-  MOCK_LOCATIONS.push(location);
-}
-
-export const updateLocation = (location: Location) => {
-    const index = MOCK_LOCATIONS.findIndex(l => l.id === location.id);
-    if (index !== -1) {
-        const { children, ...rest } = location;
-        MOCK_LOCATIONS[index] = rest as Location;
-    }
-}
-
-export const addItem = (item: Item) => {
-  MOCK_ITEMS.push(item);
-}
-
-export const updateItem = (item: Item) => {
-    const index = MOCK_ITEMS.findIndex(i => i.id === item.id);
-    if (index !== -1) {
-        MOCK_ITEMS[index] = item;
-    }
-}

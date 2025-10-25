@@ -103,4 +103,3 @@ export function AddPropertyDialog({ children, propertyToEdit, onPropertySave }: 
     </Dialog>
   );
 }
-

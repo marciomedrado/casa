@@ -1,95 +1,66 @@
 
-
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
-import { MOCK_ITEMS, MOCK_LOCATIONS, MOCK_PROPERTIES, buildLocationTree } from '@/lib/data';
+import { buildLocationTree } from '@/lib/data';
 import { AppLayout } from '@/components/layout/app-layout';
 import { ItemBrowser } from '@/components/inventory/item-browser';
 import { notFound } from 'next/navigation';
 import type { Location, Item } from '@/lib/types';
+import * as storage from '@/lib/storage';
 
 function generateRandomId(prefix: string) {
     return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 }
 
 export default function PropertyPage({ params }: { params: { propertyId: string } }) {
-  // Directly use params.propertyId as it's available on both server and client
   const { propertyId } = React.use(params);
   
   const [property, setProperty] = useState<Item | undefined>(undefined);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-
-  // --- State for Locations ---
   const [allPropertyLocations, setAllPropertyLocations] = useState<Location[]>([]);
-  const locationTree = useMemo(() => buildLocationTree(allPropertyLocations), [allPropertyLocations]);
-  
-  // --- State for Items ---
   const [allItems, setAllItems] = useState<Item[]>([]);
 
-  // Defer state initialization to the client side to avoid hydration mismatch
   useEffect(() => {
-    const currentProperty = MOCK_PROPERTIES.find(p => p.id === propertyId)
+    storage.initializeDatabase();
+    const currentProperty = storage.getPropertyById(propertyId);
     if (currentProperty) {
-        setProperty(currentProperty)
-        setAllPropertyLocations(MOCK_LOCATIONS.filter(l => l.propertyId === propertyId));
-        setAllItems(MOCK_ITEMS.filter(i => i.propertyId === propertyId));
+        setProperty(currentProperty);
+        const locations = storage.getLocations(propertyId) as Location[];
+        setAllPropertyLocations(locations);
+        setAllItems(storage.getItems(propertyId));
     } else {
-        // If property is not found after client-side check, then 404.
         notFound();
     }
   }, [propertyId]);
 
+  const locationTree = useMemo(() => buildLocationTree(allPropertyLocations), [allPropertyLocations]);
 
   const handleItemSave = (itemToSave: Item) => {
-    setAllItems(prevItems => {
-        const itemExists = prevItems.some(item => item.id === itemToSave.id);
-        if (itemExists) {
-            return prevItems.map(item => item.id === itemToSave.id ? itemToSave : item);
-        }
-        // This is a new item
-        const newItem = {
-            ...itemToSave,
-            id: itemToSave.id || generateRandomId('item'),
-            imageUrl: itemToSave.imageUrl || `https://picsum.photos/seed/${generateRandomId('img')}/400/300`,
-            imageHint: itemToSave.imageHint || 'new item',
-        };
-        return [...prevItems, newItem];
-    });
+    const savedItem = storage.saveItem(itemToSave, propertyId);
+    const itemExists = allItems.some(item => item.id === savedItem.id);
+    if (itemExists) {
+        setAllItems(prevItems => prevItems.map(item => item.id === savedItem.id ? savedItem : item));
+    } else {
+        setAllItems(prevItems => [...prevItems, savedItem]);
+    }
   };
 
   const handleLocationSave = (locationToSave: Omit<Location, 'children' | 'propertyId'> & { id?: string }) => {
-    setAllPropertyLocations(prevLocations => {
-      const isEditing = locationToSave.id && prevLocations.some(l => l.id === locationToSave.id);
-      
-      if (isEditing) {
-        // Update existing location
-        return prevLocations.map(loc => {
-          if (loc.id === locationToSave.id) {
-            // Important: do not overwrite children array that might exist
-            const existingChildren = buildLocationTree(prevLocations, loc.id);
-            return { ...loc, ...locationToSave, children: existingChildren };
-          }
-          return loc;
-        });
-      } else {
-        // Add new location
-        const newLocation: Location = {
-          ...locationToSave,
-          id: generateRandomId('loc'),
-          propertyId,
-          children: [],
-        };
-        return [...prevLocations, newLocation];
-      }
-    });
+    const savedLocation = storage.saveLocation(locationToSave, propertyId);
+    const locationExists = allPropertyLocations.some(l => l.id === savedLocation.id);
+    if (locationExists) {
+      setAllPropertyLocations(prev => prev.map(loc => loc.id === savedLocation.id ? savedLocation as Location : loc));
+    } else {
+      setAllPropertyLocations(prev => [...prev, savedLocation as Location]);
+    }
   };
 
   const getSubLocationIds = (locationId: string): string[] => {
     const allIds: string[] = [locationId];
     const stack: string[] = [locationId];
-    const allLocationsForTree = [...allPropertyLocations]; // use current state
+    const allLocationsForTree = [...allPropertyLocations];
     
     while (stack.length > 0) {
       const currentId = stack.pop()!;
@@ -107,19 +78,17 @@ export default function PropertyPage({ params }: { params: { propertyId: string 
   const filteredItems = useMemo(() => {
     let items = allItems;
 
-    // Filter by selected location first
     if (selectedLocationId) {
       const locationIds = getSubLocationIds(selectedLocationId);
       items = items.filter(item => locationIds.includes(item.locationId));
     }
     
-    // Then, filter by search query
     if (searchQuery) {
         const lowerCaseQuery = searchQuery.toLowerCase();
         items = items.filter(item => 
             item.name.toLowerCase().includes(lowerCaseQuery) ||
             item.description.toLowerCase().includes(lowerCaseQuery) ||
-            item.tags.some(tag => tag.toLowerCase().includes(lowerCaseQuery))
+            (item.tags && item.tags.some(tag => tag.toLowerCase().includes(lowerCaseQuery)))
         );
     }
     
@@ -127,7 +96,6 @@ export default function PropertyPage({ params }: { params: { propertyId: string 
   }, [selectedLocationId, searchQuery, allItems, allPropertyLocations]);
   
   if (!property) {
-    // Show a loading state or return null until the property is loaded on the client
     return null;
   }
 

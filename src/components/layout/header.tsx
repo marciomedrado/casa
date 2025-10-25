@@ -14,10 +14,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { MOCK_USER, MOCK_PROPERTIES, MOCK_LOCATIONS, MOCK_ITEMS } from '@/lib/data';
+import { MOCK_USER } from '@/lib/data';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { getProperties, getLocations, getItems } from '@/lib/storage';
 
 export function Header({ 
   showSidebarTrigger = false,
@@ -60,18 +61,21 @@ export function Header({
             document.body.removeChild(link);
         }
     }
+    
+    const currentUrl = window.location.pathname;
+    const propertyId = currentUrl.split('/')[2];
 
-    const propertiesCSV = convertToCSV(MOCK_PROPERTIES, ['id', 'name', 'address', 'imageUrl', 'imageHint']);
-    const locationsCSV = convertToCSV(MOCK_LOCATIONS.flatMap(l => {
-      const {children, ...rest} = l;
-      const flatChildren = l.children.map(c => ({...c, children: undefined}));
-      return [rest, ...flatChildren];
-    }), ['id', 'name', 'propertyId', 'parentId', 'type', 'icon']);
-    const itemsCSV = convertToCSV(MOCK_ITEMS, ['id', 'name', 'description', 'quantity', 'tags', 'imageUrl', 'imageHint', 'locationId', 'parentId', 'isContainer', 'propertyId', 'locationPath']);
+    const properties = getProperties();
+    const locations = propertyId ? getLocations(propertyId) : [];
+    const items = propertyId ? getItems(propertyId) : [];
+
+    const propertiesCSV = convertToCSV(properties, ['id', 'name', 'address', 'imageUrl', 'imageHint']);
+    const locationsCSV = convertToCSV(locations, ['id', 'name', 'propertyId', 'parentId', 'type', 'icon']);
+    const itemsCSV = convertToCSV(items, ['id', 'name', 'description', 'quantity', 'tags', 'imageUrl', 'imageHint', 'locationId', 'parentId', 'isContainer', 'propertyId', 'locationPath']);
 
     downloadCSV('properties.csv', propertiesCSV);
-    downloadCSV('locations.csv', locationsCSV);
-    downloadCSV('items.csv', itemsCSV);
+    if(locations.length > 0) downloadCSV('locations.csv', locationsCSV);
+    if(items.length > 0) downloadCSV('items.csv', itemsCSV);
 
     toast({
         title: "Backup Concluído",
@@ -86,20 +90,20 @@ export function Header({
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
-        // For now, we just log the content. In a real app, you'd parse this
-        // and update your application state.
+        // In a real app, you'd parse this and update localStorage.
+        // For now, we'll just show a toast and log.
         Array.from(files).forEach(file => {
             const reader = new FileReader();
             reader.onload = (e) => {
-                console.log(`Restoring ${file.name}:`);
-                console.log(e.target?.result);
+                console.log(`File ${file.name} content:`, e.target?.result);
             };
             reader.readAsText(file);
         });
 
         toast({
-            title: "Restauração Iniciada",
-            description: "Verifique o console para ver os dados restaurados.",
+            title: "Restauração não implementada",
+            description: "A importação de CSV precisa ser implementada.",
+            variant: "destructive"
         });
     }
     // Reset file input

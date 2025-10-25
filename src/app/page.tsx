@@ -4,44 +4,31 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
-import { MOCK_PROPERTIES } from '@/lib/data';
 import { PropertyCard } from '@/components/dashboard/property-card';
 import { Header } from '@/components/layout/header';
 import { AddPropertyDialog } from '@/components/dashboard/add-property-dialog';
 import type { Property } from '@/lib/types';
-
-function generateRandomId(prefix: string) {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-}
+import { initializeDatabase, getProperties, saveProperty } from '@/lib/storage';
 
 export default function Dashboard() {
   const [properties, setProperties] = useState<Property[]>([]);
 
   useEffect(() => {
-    // Initialize state from mock data on the client to avoid hydration issues
-    setProperties(MOCK_PROPERTIES);
+    // Initialize DB and load properties from localStorage on client side
+    initializeDatabase();
+    setProperties(getProperties());
   }, []);
 
   const handlePropertySave = (propertyToSave: Omit<Property, 'id' | 'imageUrl' | 'imageHint'> & { id?: string }) => {
-    setProperties(prevProperties => {
-      const isEditing = propertyToSave.id && prevProperties.some(p => p.id === propertyToSave.id);
-
-      if (isEditing) {
-        return prevProperties.map(prop => 
-          prop.id === propertyToSave.id ? { ...prop, ...propertyToSave } : prop
-        );
-      } else {
-        const newProperty: Property = {
-          ...propertyToSave,
-          id: generateRandomId('prop'),
-          imageUrl: `https://picsum.photos/seed/${generateRandomId('img')}/600/400`,
-          imageHint: 'new property',
-        };
-        return [...prevProperties, newProperty];
-      }
-    });
+    const savedProperty = saveProperty(propertyToSave);
+    if (propertyToSave.id) {
+        // Editing
+        setProperties(prev => prev.map(p => p.id === savedProperty.id ? savedProperty : p));
+    } else {
+        // Adding
+        setProperties(prev => [...prev, savedProperty]);
+    }
   };
-
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
