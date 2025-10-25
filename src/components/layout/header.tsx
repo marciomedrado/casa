@@ -144,7 +144,7 @@ export function Header({
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>{MOCK_USER.name}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Configurações</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => toast({ title: "Em breve!", description: "A página de configurações está em desenvolvimento." })}>Configurações</DropdownMenuItem>
             <DropdownMenuItem onClick={handleBackup}>
               <Download className="mr-2 h-4 w-4" />
               <span>Fazer Backup</span>
@@ -154,7 +154,7 @@ export function Header({
                 <span>Restaurar Backup</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Sair</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => toast({ title: "Em breve!", description: "A funcionalidade de logout será implementada em breve." })}>Sair</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         <input 
