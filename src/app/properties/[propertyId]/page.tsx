@@ -72,12 +72,15 @@ export default function PropertyPage() {
     return allIds;
   };
 
-  const filteredItems = useMemo(() => {
+  const { filteredItems, selectedLocationName } = useMemo(() => {
     let items = allItems;
+    let selectedLocationName = 'Todos os Itens';
 
     if (selectedLocationId) {
       const locationIds = getSubLocationIds(selectedLocationId);
       items = items.filter(item => locationIds.includes(item.locationId));
+      const loc = allPropertyLocations.find(l => l.id === selectedLocationId);
+      if (loc) selectedLocationName = loc.name;
     }
     
     if (searchQuery) {
@@ -87,9 +90,15 @@ export default function PropertyPage() {
             item.description.toLowerCase().includes(lowerCaseQuery) ||
             (item.tags && item.tags.some(tag => tag.toLowerCase().includes(lowerCaseQuery)))
         );
+        // When searching, we don't want to scope to a location name if results are from multiple places
+        if (selectedLocationId) {
+          selectedLocationName = `Resultados para "${searchQuery}" em ${selectedLocationName}`;
+        } else {
+          selectedLocationName = `Resultados para "${searchQuery}"`;
+        }
     }
     
-    return items;
+    return { filteredItems: items, selectedLocationName };
   }, [selectedLocationId, searchQuery, allItems, allPropertyLocations]);
   
   if (!property) {
@@ -113,6 +122,7 @@ export default function PropertyPage() {
         visibleItems={filteredItems}
         allLocations={locationTree}
         onItemSave={handleItemSave}
+        locationName={selectedLocationName}
       />
     </AppLayout>
   );

@@ -7,7 +7,7 @@ import type { Item, Location } from '@/lib/types';
 import { ItemList } from './item-list';
 import { AddItemDialog } from './add-item-dialog';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Home, DoorOpen, Rows3 } from 'lucide-react';
+import { PlusCircle, Home, DoorOpen, Rows3, PackageOpen } from 'lucide-react';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator, BreadcrumbPage } from '@/components/ui/breadcrumb';
 import { Separator } from '../ui/separator';
 
@@ -16,11 +16,13 @@ export function ItemBrowser({
   visibleItems,
   allLocations,
   onItemSave, // Receive the save handler
+  locationName,
 }: { 
   allItems: Item[],
   visibleItems: Item[],
   allLocations: Location[],
   onItemSave: (item: Item) => void, // Define the prop type
+  locationName: string,
 }) {
   const [currentContainerId, setCurrentContainerId] = useState<string | null>(null);
   
@@ -71,12 +73,7 @@ export function ItemBrowser({
   };
   
   const breadcrumbItems = useMemo(() => {
-    // When no location filter is active, show a simpler breadcrumb.
-    if (visibleItems.length === allItems.length && !currentContainerId) {
-        return [{ id: null, name: 'Todos os Itens' }];
-    }
-
-    const path: { id: string | null; name: string }[] = [{ id: null, name: 'Itens Filtrados' }];
+    let path: { id: string | null; name: string }[] = [{ id: null, name: locationName }];
     let currentId = currentContainerId;
     
     const pathItems: Item[] = [];
@@ -95,7 +92,7 @@ export function ItemBrowser({
     });
 
     return path;
-  }, [currentContainerId, itemMap, visibleItems.length, allItems.length]);
+  }, [currentContainerId, itemMap, locationName]);
 
 
   const renderSubContainer = (
@@ -111,32 +108,43 @@ export function ItemBrowser({
       <ItemList items={items} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={onItemSave} locations={allLocations} />
     </div>
   );
+  
+  const currentTitle = breadcrumbItems[breadcrumbItems.length - 1].name;
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <Breadcrumb>
-          <BreadcrumbList>
-            {breadcrumbItems.map((item, index) => (
-              <React.Fragment key={item.id ?? 'root'}>
-                <BreadcrumbItem>
-                  {index < breadcrumbItems.length - 1 ? (
-                    <BreadcrumbLink
-                      onClick={() => handleBreadcrumbClick(item.id)}
-                      className="cursor-pointer"
-                    >
-                      {index === 0 && <Home className="h-4 w-4 inline-block mr-2" />}
-                      {item.name}
-                    </BreadcrumbLink>
-                  ) : (
-                    <BreadcrumbPage>{item.name}</BreadcrumbPage>
-                  )}
-                </BreadcrumbItem>
-                {index < breadcrumbItems.length - 1 && <BreadcrumbSeparator />}
-              </React.Fragment>
-            ))}
-          </BreadcrumbList>
-        </Breadcrumb>
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">{currentTitle}</h2>
+          <Breadcrumb className="text-sm text-muted-foreground mt-1">
+            <BreadcrumbList>
+              {breadcrumbItems.slice(0, -1).map((item, index) => (
+                <React.Fragment key={item.id ?? 'root'}>
+                  <BreadcrumbItem>
+                      <BreadcrumbLink
+                        onClick={() => handleBreadcrumbClick(item.id)}
+                        className="cursor-pointer"
+                      >
+                        {index === 0 && <Home className="h-4 w-4 inline-block mr-1" />}
+                        {item.name}
+                      </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator />
+                </React.Fragment>
+              ))}
+              {breadcrumbItems.length > 1 && (
+                  <BreadcrumbItem>
+                      <BreadcrumbPage>
+                        <div className="flex items-center gap-1">
+                            <PackageOpen className="h-4 w-4" /> 
+                            {currentTitle}
+                        </div>
+                      </BreadcrumbPage>
+                  </BreadcrumbItem>
+              )}
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
 
         <AddItemDialog parentContainer={currentContainer} locations={allLocations} onItemSave={onItemSave}>
           <Button>
