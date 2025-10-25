@@ -55,9 +55,9 @@ export function AppLayout({
           <SidebarGroup>
             <SidebarMenu>
                <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => onLocationSelect(null, 'all-locations')} isActive={viewMode === 'all-locations' && selectedLocationId === null} tooltip="Todos os Locais">
+                <SidebarMenuButton onClick={() => onLocationSelect(null, 'all-locations')} isActive={viewMode === 'all-locations' && selectedLocationId === null} tooltip="Todos os Cômodos">
                   <LayoutGrid />
-                  <span>Todos os Locais</span>
+                  <span>Todos os Cômodos</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
