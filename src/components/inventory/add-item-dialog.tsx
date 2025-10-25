@@ -24,8 +24,8 @@ import type { Item, SubContainer, Location } from '@/lib/types';
 import { Checkbox } from '../ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-function generateRandomId() {
-    return `item-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+function generateRandomId(prefix: string) {
+    return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 }
 
 export function AddItemDialog({ 
@@ -211,10 +211,10 @@ export function AddItemDialog({
         }
 
         const baseItem = isEditMode && itemToEdit ? itemToEdit : {
-            id: generateRandomId(),
+            id: generateRandomId('item'),
             propertyId: parentContainer?.propertyId || (locations && locations.length > 0 ? locations[0].propertyId : 'prop-1'), // Improved fallback
             parentId: parentContainer?.id ?? null,
-            imageUrl: '', // Will be set in useEffect
+            imageUrl: '', 
             imageHint: 'new item',
         };
 
@@ -234,7 +234,7 @@ export function AddItemDialog({
         
         // Only generate new image for new items
         if (!isEditMode) {
-            finalItem.imageUrl = `https://picsum.photos/seed/${generateRandomId('img')}/400/300`
+             finalItem.imageUrl = `https://picsum.photos/seed/${generateRandomId('img')}/400/300`;
         }
 
         onItemSave(finalItem);

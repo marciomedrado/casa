@@ -16,8 +16,8 @@ function generateRandomId(prefix: string) {
 export default function PropertyPage({ params }: { params: { propertyId: string } }) {
   // Directly use params.propertyId as it's available on both server and client
   const { propertyId } = React.use(params);
-  const property = useMemo(() => MOCK_PROPERTIES.find(p => p.id === propertyId), [propertyId]);
   
+  const [property, setProperty] = useState<Item | undefined>(undefined);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -30,18 +30,32 @@ export default function PropertyPage({ params }: { params: { propertyId: string 
 
   // Defer state initialization to the client side to avoid hydration mismatch
   useEffect(() => {
-    setAllPropertyLocations(MOCK_LOCATIONS.filter(l => l.propertyId === propertyId));
-    setAllItems(MOCK_ITEMS.filter(i => i.propertyId === propertyId));
+    const currentProperty = MOCK_PROPERTIES.find(p => p.id === propertyId)
+    if (currentProperty) {
+        setProperty(currentProperty)
+        setAllPropertyLocations(MOCK_LOCATIONS.filter(l => l.propertyId === propertyId));
+        setAllItems(MOCK_ITEMS.filter(i => i.propertyId === propertyId));
+    } else {
+        // If property is not found after client-side check, then 404.
+        notFound();
+    }
   }, [propertyId]);
 
 
-  const handleItemSave = (updatedItem: Item) => {
+  const handleItemSave = (itemToSave: Item) => {
     setAllItems(prevItems => {
-        const itemExists = prevItems.some(item => item.id === updatedItem.id);
+        const itemExists = prevItems.some(item => item.id === itemToSave.id);
         if (itemExists) {
-            return prevItems.map(item => item.id === updatedItem.id ? updatedItem : item);
+            return prevItems.map(item => item.id === itemToSave.id ? itemToSave : item);
         }
-        return [...prevItems, updatedItem];
+        // This is a new item
+        const newItem = {
+            ...itemToSave,
+            id: itemToSave.id || generateRandomId('item'),
+            imageUrl: itemToSave.imageUrl || `https://picsum.photos/seed/${generateRandomId('img')}/400/300`,
+            imageHint: itemToSave.imageHint || 'new item',
+        };
+        return [...prevItems, newItem];
     });
   };
 
@@ -53,8 +67,9 @@ export default function PropertyPage({ params }: { params: { propertyId: string 
         // Update existing location
         return prevLocations.map(loc => {
           if (loc.id === locationToSave.id) {
-            // Important: do not overwrite children array
-            return { ...loc, ...locationToSave, children: loc.children || [] };
+            // Important: do not overwrite children array that might exist
+            const existingChildren = buildLocationTree(prevLocations, loc.id);
+            return { ...loc, ...locationToSave, children: existingChildren };
           }
           return loc;
         });
@@ -74,10 +89,11 @@ export default function PropertyPage({ params }: { params: { propertyId: string 
   const getSubLocationIds = (locationId: string): string[] => {
     const allIds: string[] = [locationId];
     const stack: string[] = [locationId];
+    const allLocationsForTree = [...allPropertyLocations]; // use current state
     
     while (stack.length > 0) {
       const currentId = stack.pop()!;
-      const children = allPropertyLocations.filter(l => l.parentId === currentId);
+      const children = allLocationsForTree.filter(l => l.parentId === currentId);
       for (const child of children) {
         if (!allIds.includes(child.id)) {
           allIds.push(child.id);
@@ -111,7 +127,8 @@ export default function PropertyPage({ params }: { params: { propertyId: string 
   }, [selectedLocationId, searchQuery, allItems, allPropertyLocations]);
   
   if (!property) {
-    notFound();
+    // Show a loading state or return null until the property is loaded on the client
+    return null;
   }
 
   return (
