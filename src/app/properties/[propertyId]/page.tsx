@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useMemo, useState, use } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { MOCK_ITEMS, MOCK_LOCATIONS, MOCK_PROPERTIES, buildLocationTree } from '@/lib/data';
 import { AppLayout } from '@/components/layout/app-layout';
 import { ItemBrowser } from '@/components/inventory/item-browser';
@@ -14,18 +14,26 @@ function generateRandomId(prefix: string) {
 }
 
 export default function PropertyPage({ params }: { params: { propertyId: string } }) {
-  const { propertyId } = use(params);
+  // Directly use params.propertyId as it's available on both server and client
+  const { propertyId } = params;
   const property = useMemo(() => MOCK_PROPERTIES.find(p => p.id === propertyId), [propertyId]);
   
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   // --- State for Locations ---
-  const [allPropertyLocations, setAllPropertyLocations] = useState<Location[]>(() => MOCK_LOCATIONS.filter(l => l.propertyId === propertyId));
+  const [allPropertyLocations, setAllPropertyLocations] = useState<Location[]>([]);
   const locationTree = useMemo(() => buildLocationTree(allPropertyLocations), [allPropertyLocations]);
   
   // --- State for Items ---
-  const [allItems, setAllItems] = useState<Item[]>(() => MOCK_ITEMS.filter(i => i.propertyId === propertyId));
+  const [allItems, setAllItems] = useState<Item[]>([]);
+
+  // Defer state initialization to the client side to avoid hydration mismatch
+  useEffect(() => {
+    setAllPropertyLocations(MOCK_LOCATIONS.filter(l => l.propertyId === propertyId));
+    setAllItems(MOCK_ITEMS.filter(i => i.propertyId === propertyId));
+  }, [propertyId]);
+
 
   const handleItemSave = (updatedItem: Item) => {
     setAllItems(prevItems => {

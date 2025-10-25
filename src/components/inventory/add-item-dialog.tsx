@@ -214,7 +214,7 @@ export function AddItemDialog({
             id: generateRandomId(),
             propertyId: parentContainer?.propertyId || (locations && locations.length > 0 ? locations[0].propertyId : 'prop-1'), // Improved fallback
             parentId: parentContainer?.id ?? null,
-            imageUrl: `https://picsum.photos/seed/${generateRandomId('img')}/400/300`,
+            imageUrl: '', // Will be set in useEffect
             imageHint: 'new item',
         };
 
@@ -231,6 +231,11 @@ export function AddItemDialog({
             locationPath: finalPath,
             subContainer: parentContainer ? subContainer : null,
         };
+        
+        // Only generate new image for new items
+        if (!isEditMode) {
+            finalItem.imageUrl = `https://picsum.photos/seed/${generateRandomId('img')}/400/300`
+        }
 
         onItemSave(finalItem);
 
