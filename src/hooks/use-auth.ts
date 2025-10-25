@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useCallback } from 'react';
@@ -12,6 +13,10 @@ export function useAuth() {
 
   const login = useCallback(async () => {
     if (!auth || !firestore) return false;
+    
+    // Primeiro, faz o logout para limpar qualquer sessão em cache.
+    await signOut(auth);
+
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
@@ -33,6 +38,10 @@ export function useAuth() {
       return true;
     } catch (error) {
       console.error('Error during sign-in:', error);
+      // Evita redirecionamento se o usuário fechar o pop-up
+      if ((error as {code?:string}).code === 'auth/popup-closed-by-user') {
+        return false;
+      }
       return false;
     }
   }, [auth, firestore]);
