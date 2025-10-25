@@ -18,7 +18,7 @@ import { MOCK_USER } from '@/lib/data';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { getProperties, getLocations, getItems } from '@/lib/storage';
+import { getProperties, getLocations, getItems, restoreFromCSV } from '@/lib/storage';
 
 export function Header({ 
   showSidebarTrigger = false,
@@ -66,16 +66,17 @@ export function Header({
     const propertyId = currentUrl.split('/')[2];
 
     const properties = getProperties();
-    const locations = propertyId ? getLocations(propertyId) : [];
-    const items = propertyId ? getItems(propertyId) : [];
+    const locations = getFromStorage<Location[]>(`${DB_PREFIX}-locations`);
+    const items = getFromStorage<Item[]>(`${DB_PREFIX}-items`);
+
 
     const propertiesCSV = convertToCSV(properties, ['id', 'name', 'address', 'imageUrl', 'imageHint']);
     const locationsCSV = convertToCSV(locations, ['id', 'name', 'propertyId', 'parentId', 'type', 'icon']);
-    const itemsCSV = convertToCSV(items, ['id', 'name', 'description', 'quantity', 'tags', 'imageUrl', 'imageHint', 'locationId', 'parentId', 'isContainer', 'propertyId', 'locationPath']);
+    const itemsCSV = convertToCSV(items, ['id', 'name', 'description', 'quantity', 'tags', 'imageUrl', 'imageHint', 'locationId', 'parentId', 'isContainer', 'doorCount', 'drawerCount', 'propertyId', 'locationPath', 'subContainer']);
 
     downloadCSV('properties.csv', propertiesCSV);
-    if(locations.length > 0) downloadCSV('locations.csv', locationsCSV);
-    if(items.length > 0) downloadCSV('items.csv', itemsCSV);
+    downloadCSV('locations.csv', locationsCSV);
+    downloadCSV('items.csv', itemsCSV);
 
     toast({
         title: "Backup Concluído",
@@ -89,23 +90,47 @@ export function Header({
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (files && files.length > 0) {
-        // In a real app, you'd parse this and update localStorage.
-        // For now, we'll just show a toast and log.
-        Array.from(files).forEach(file => {
+    if (!files || files.length === 0) return;
+
+    const filePromises = Array.from(files).map(file => {
+        return new Promise<{ name: string, content: string }>((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = (e) => {
-                console.log(`File ${file.name} content:`, e.target?.result);
+                resolve({ name: file.name, content: e.target?.result as string });
             };
+            reader.onerror = reject;
             reader.readAsText(file);
         });
+    });
+
+    Promise.all(filePromises).then(fileContents => {
+        const data: { [key: string]: string } = {};
+        fileContents.forEach(file => {
+            if (file.name === 'properties.csv' || file.name === 'locations.csv' || file.name === 'items.csv') {
+                data[file.name.replace('.csv', '')] = file.content;
+            }
+        });
+
+        restoreFromCSV(data.properties, data.locations, data.items);
 
         toast({
-            title: "Restauração não implementada",
-            description: "A importação de CSV precisa ser implementada.",
+            title: "Restauração Concluída",
+            description: "Seus dados foram importados com sucesso. A página será atualizada.",
+        });
+
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
+
+    }).catch(error => {
+        console.error("Error reading files:", error);
+        toast({
+            title: "Erro na Restauração",
+            description: "Não foi possível ler os arquivos de backup.",
             variant: "destructive"
         });
-    }
+    });
+    
     // Reset file input
     if(restoreRef.current) restoreRef.current.value = "";
   };
@@ -131,7 +156,7 @@ export function Header({
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Buscar itens ou locais..."
+              placeholder="Buscar itens ou cômodos..."
               className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
               value={searchQuery ?? ''}
               onChange={(e) => setSearchQuery?.(e.target.value)}
