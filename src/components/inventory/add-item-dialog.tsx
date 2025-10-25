@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, BrainCircuit, Camera, Upload } from 'lucide-react';
+import { PlusCircle, BrainCircuit } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
@@ -23,9 +23,6 @@ import type { Item, Location } from '@/lib/types';
 import { Checkbox } from '../ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { suggestCategories } from '@/ai/ai-smart-categorization';
-import { identifyItem as aiIdentifyItem } from '@/ai/flows/identify-item-flow';
-import Image from 'next/image';
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 function generateRandomId(prefix: string) {
     return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -68,16 +65,8 @@ export function AddItemDialog({
     const [subContainer, setSubContainer] = useState<SubContainer | null>(null);
     const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
     const [isThinking, setIsThinking] = useState(false);
-    const [isIdentifying, setIsIdentifying] = useState(false);
     const [locationId, setLocationId] = useState<string | null>(null);
     const [parentId, setParentId] = useState<string | null>(null);
-    const [imageDataUri, setImageDataUri] = useState<string | null>(null);
-    const [showCamera, setShowCamera] = useState(false);
-    const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
-    
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
 
     const isEditMode = itemToEdit !== undefined;
@@ -147,7 +136,6 @@ export function AddItemDialog({
                 setSubContainer(itemToEdit.subContainer ?? null);
                 setLocationId(itemToEdit.locationId);
                 setParentId(itemToEdit.parentId ?? null);
-                setImageDataUri(itemToEdit.imageUrl);
             } else {
                  // ADD MODE
                  if (initialParentContainer) {
@@ -172,42 +160,8 @@ export function AddItemDialog({
             setSubContainer(null);
             setLocationId(null);
             setParentId(null);
-            setImageDataUri(null);
-            setShowCamera(false);
-            setHasCameraPermission(null);
-            const stream = videoRef.current?.srcObject as MediaStream | null;
-            stream?.getTracks().forEach(track => track.stop());
         }
     }, [open, itemToEdit, initialParentContainer, flattenedLocations]);
-
-    useEffect(() => {
-        if (showCamera) {
-            const getCameraPermission = async () => {
-              try {
-                const stream = await navigator.mediaDevices.getUserMedia({video: true});
-                setHasCameraPermission(true);
-        
-                if (videoRef.current) {
-                  videoRef.current.srcObject = stream;
-                }
-              } catch (error) {
-                console.error('Error accessing camera:', error);
-                setHasCameraPermission(false);
-                toast({
-                  variant: 'destructive',
-                  title: 'Acesso à câmera negado',
-                  description: 'Por favor, habilite as permissões de câmera nas configurações do seu navegador para usar este aplicativo.',
-                });
-              }
-            };
-        
-            getCameraPermission();
-        } else {
-            const stream = videoRef.current?.srcObject as MediaStream | null;
-            stream?.getTracks().forEach(track => track.stop());
-        }
-    }, [showCamera, toast]);
-
 
     const availableContainersInLocation = useMemo(() => {
         if (!locationId) return [];
@@ -271,31 +225,6 @@ export function AddItemDialog({
             setIsThinking(false);
         }
     }
-
-    const handleIdentifyItem = async () => {
-        if (!imageDataUri || isReadOnly) return;
-        setIsIdentifying(true);
-        try {
-            const result = await aiIdentifyItem({ photoDataUri: imageDataUri });
-            if (result.itemName) {
-                setName(result.itemName);
-                toast({
-                    title: "Item Identificado!",
-                    description: `Sugerimos um nome para o seu item.`,
-                });
-            }
-            setImageDataUri(null);
-        } catch (error) {
-            console.error("Error identifying item:", error);
-            toast({
-                variant: 'destructive',
-                title: "Falha na Identificação",
-                description: "Não foi possível identificar o item a partir da imagem.",
-            });
-        } finally {
-            setIsIdentifying(false);
-        }
-    }
     
     const addSuggestedTag = (tag: string) => {
         if (isReadOnly) return;
@@ -334,7 +263,8 @@ export function AddItemDialog({
         const baseItem = isEditMode && itemToEdit ? itemToEdit : {
             id: generateRandomId('item'),
             propertyId: parentContainer?.propertyId || (locationMap.get(locationId)?.propertyId) || 'prop-1',
-            imageHint: 'new item',
+            imageHint: '',
+            imageUrl: '',
         };
 
         const finalItem: Item = {
@@ -350,7 +280,6 @@ export function AddItemDialog({
             parentId: parentId,
             locationPath: finalPath,
             subContainer: parentContainer ? subContainer : null,
-            imageUrl: imageDataUri || (isEditMode && itemToEdit?.imageUrl) || `https://picsum.photos/seed/${generateRandomId('img')}/400/300`,
         };
 
         onItemSave(finalItem);
@@ -377,30 +306,6 @@ export function AddItemDialog({
             setSubContainer(null);
         } else {
             setSubContainer({ type, number });
-        }
-    }
-
-    const handleTakePhoto = () => {
-        if (canvasRef.current && videoRef.current) {
-            const canvas = canvasRef.current;
-            const video = videoRef.current;
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext('2d')?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-            const dataUri = canvas.toDataURL('image/jpeg');
-            setImageDataUri(dataUri);
-            setShowCamera(false);
-        }
-    }
-
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                setImageDataUri(event.target?.result as string);
-            };
-            reader.readAsDataURL(file);
         }
     }
 
@@ -434,65 +339,6 @@ export function AddItemDialog({
           <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
-
-            <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Imagem</Label>
-                <div className="col-span-3">
-                    <div className="w-full aspect-video rounded-md bg-muted flex items-center justify-center overflow-hidden relative">
-                         {showCamera ? (
-                            <>
-                                <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
-                                {hasCameraPermission === false && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 p-4">
-                                        <Alert variant="destructive">
-                                            <AlertTitle>Acesso à Câmera Necessário</AlertTitle>
-                                            <AlertDescription>
-                                                Por favor, permita o acesso à câmera para usar este recurso.
-                                            </AlertDescription>
-                                        </Alert>
-                                    </div>
-                                )}
-                            </>
-                        ) : imageDataUri ? (
-                            <Image src={imageDataUri} alt="Preview do Item" layout="fill" objectFit="cover" />
-                        ) : (
-                            <span className="text-sm text-muted-foreground">Sem imagem</span>
-                        )}
-                    </div>
-                     {!isReadOnly && (
-                        <div className="flex gap-2 mt-2">
-                           {showCamera ? (
-                               <>
-                                <Button type="button" onClick={handleTakePhoto} disabled={!hasCameraPermission} className="flex-1">Capturar</Button>
-                                <Button type="button" variant="outline" onClick={() => setShowCamera(false)}>Cancelar</Button>
-                               </>
-                           ) : (
-                                <>
-                                <Button type="button" variant="outline" className="flex-1" onClick={() => setShowCamera(true)}><Camera className="mr-2"/>Tirar Foto</Button>
-                                <Button type="button" variant="outline" className="flex-1" onClick={() => fileInputRef.current?.click()}><Upload className="mr-2"/>Carregar</Button>
-                                <input type="file" ref={fileInputRef} accept="image/*" onChange={handleFileSelect} className="hidden" />
-                               </>
-                           )}
-                        </div>
-                    )}
-                </div>
-            </div>
-
-             {imageDataUri && !isReadOnly && (
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <div />
-                    <div className="col-span-3">
-                         <Button onClick={handleIdentifyItem} disabled={isIdentifying} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                            <BrainCircuit className={cn("mr-2", isIdentifying && "animate-spin")} />
-                            {isIdentifying ? 'Identificando...' : 'Identificar com IA'}
-                        </Button>
-                    </div>
-                </div>
-            )}
-            
-            <canvas ref={canvasRef} className="hidden"></canvas>
-
-
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="name" className="text-right">
               Nome
@@ -686,5 +532,4 @@ export function AddItemDialog({
   );
 }
 
-    
     

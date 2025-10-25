@@ -71,8 +71,8 @@ export function saveProperty(property: Omit<Property, 'id' | 'imageUrl' | 'image
     const newProperty: Property = {
         ...property,
         id: `prop-${Date.now()}`,
-        imageUrl: `https://picsum.photos/seed/${Date.now()}/600/400`,
-        imageHint: 'new property'
+        imageUrl: ``,
+        imageHint: ''
     };
     const updatedProperties = [...properties, newProperty];
     saveToStorage(PROPERTIES_KEY, updatedProperties);
@@ -157,9 +157,10 @@ export function saveItem(item: Item, propertyId: string, isClone: boolean = fals
 
     newItem.id = `item-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     
-    if (!newItem.imageUrl || isClone) {
-        newItem.imageUrl = `https://picsum.photos/seed/${newItem.id}/400/300`;
-    }
+    // Remove image url since we are not using it
+    newItem.imageUrl = '';
+    newItem.imageHint = '';
+
 
     const updatedItems = [...items, newItem];
     saveToStorage(ITEMS_KEY, updatedItems);
@@ -209,3 +210,5 @@ export function restoreFromBackup(jsonString: string) {
         saveToStorage<Item>(ITEMS_KEY, backupData.items);
     }
 }
+
+    
