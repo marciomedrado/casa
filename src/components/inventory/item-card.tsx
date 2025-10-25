@@ -10,6 +10,7 @@ import { AddItemDialog } from './add-item-dialog';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import Image from 'next/image';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -74,97 +75,112 @@ export function ItemCard({ item, onContainerClick, onItemSave, onItemDelete, onI
           item.isContainer ? "cursor-pointer" : "cursor-default"
         )}
       >
-        <CardHeader className="flex flex-row items-start justify-start gap-4 p-4">
-             <div className="flex gap-2">
-                 {!item.isContainer && (
-                     <Button
-                        variant="ghost"
+        <CardHeader className="p-0 relative">
+          <div 
+            onClick={item.isContainer ? undefined : () => setIsViewDialogOpen(true)}
+            className={cn("relative h-40 w-full", !item.isContainer && "cursor-pointer")}
+          >
+             <Image
+              src={item.imageUrl}
+              alt={item.name}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-cover group-hover:scale-105 transition-transform"
+              data-ai-hint={item.imageHint}
+            />
+            <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors" />
+          </div>
+
+          <div className="absolute top-2 right-2 flex gap-1">
+             {!item.isContainer && (
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsViewDialogOpen(true);
+                  }}
+                  className="rounded-full h-8 w-8 bg-black/50 text-white hover:bg-black/70"
+                >
+                  <Eye className="h-4 w-4" />
+                  <span className="sr-only">Visualizar Item</span>
+                </Button>
+              )}
+              <Button
+                  data-edit-button
+                  variant="secondary"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsEditDialogOpen(true);
+                  }}
+                  className="rounded-full h-8 w-8 bg-black/50 text-white hover:bg-black/70"
+                >
+                  <Pencil className="h-4 w-4" />
+                  <span className="sr-only">Editar Item</span>
+                </Button>
+              <Button
+                  variant="secondary"
+                  size="icon"
+                  onClick={(e) => {
+                      e.stopPropagation();
+                      onItemClone(item);
+                  }}
+                  className="rounded-full h-8 w-8 bg-black/50 text-white hover:bg-black/70"
+              >
+                  <Copy className="h-4 w-4" />
+                  <span className="sr-only">Clonar Item</span>
+              </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                      <Button
+                        variant="destructive"
                         size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsViewDialogOpen(true);
-                        }}
+                        onClick={(e) => e.stopPropagation()}
                         className="rounded-full h-8 w-8"
                       >
-                        <Eye className="h-4 w-4" />
-                        <span className="sr-only">Visualizar Item</span>
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Excluir Item</span>
                       </Button>
-                  )}
-                  <Button
-                      data-edit-button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsEditDialogOpen(true);
-                      }}
-                      className="rounded-full h-8 w-8"
-                    >
-                      <Pencil className="h-4 w-4" />
-                      <span className="sr-only">Editar Item</span>
-                    </Button>
-                  <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                          e.stopPropagation();
-                          onItemClone(item);
-                      }}
-                      className="rounded-full h-8 w-8"
-                  >
-                      <Copy className="h-4 w-4" />
-                      <span className="sr-only">Clonar Item</span>
-                  </Button>
-                   <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                         <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => e.stopPropagation()}
-                            className="rounded-full h-8 w-8 text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Excluir Item</span>
-                          </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                          <AlertDialogHeader>
-                              <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                  Esta ação não pode ser desfeita. Isso excluirá permanentemente o item
-                                  <span className="font-semibold"> {item.name}</span>.
-                                  Se for um container, todos os itens dentro dele também serão excluídos.
-                              </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={(e) => { e.stopPropagation(); onItemDelete(item.id);}} className="bg-destructive hover:bg-destructive/90">Excluir</AlertDialogAction>
-                          </AlertDialogFooter>
-                      </AlertDialogContent>
-                  </AlertDialog>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                      <AlertDialogHeader>
+                          <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                              Esta ação não pode ser desfeita. Isso excluirá permanentemente o item
+                              <span className="font-semibold"> {item.name}</span>.
+                              {item.isContainer && " Todos os itens dentro dele também serão excluídos."}
+                          </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                          <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={(e) => { e.stopPropagation(); onItemDelete(item.id);}} className="bg-destructive hover:bg-destructive/90">Excluir</AlertDialogAction>
+                      </AlertDialogFooter>
+                  </AlertDialogContent>
+              </AlertDialog>
+          </div>
+
+          {item.isContainer && (
+            <div 
+              onClick={(e) => { e.stopPropagation(); onContainerClick(item.id); }}
+              className="absolute top-2 left-2 flex items-center gap-1.5 rounded-full bg-black/50 px-2 py-1 text-xs text-white cursor-pointer w-fit"
+            >
+              <PackageOpen className="h-3 w-3" />
+              <span>Container</span>
             </div>
-             <div className="flex-1 min-w-0">
-                 {item.isContainer && (
-                  <div 
-                    onClick={(e) => { e.stopPropagation(); onContainerClick(item.id); }}
-                    className="flex items-center gap-1.5 rounded-full bg-black/50 px-2 py-1 text-xs text-white cursor-pointer w-fit mb-2"
-                  >
-                    <PackageOpen className="h-3 w-3" />
-                    <span>Container</span>
-                  </div>
-                )}
-             </div>
+          )}
+
         </CardHeader>
-        <CardContent className="p-4 pt-0 flex-1">
+        <CardContent className="p-4 pt-4 flex-1">
           <CardTitle className="text-lg line-clamp-1 mb-2">{item.name}</CardTitle>
-          <div className="flex items-center text-sm text-muted-foreground mb-1">
-              <MapPin className="h-4 w-4 mr-2 shrink-0" />
+          <div className="flex items-start text-sm text-muted-foreground mb-1">
+              <MapPin className="h-4 w-4 mr-2 shrink-0 mt-0.5" />
               <span className="truncate">{item.locationPath?.join(' / ') || ''}</span>
           </div>
           <CardDescription className="text-sm line-clamp-2 mt-2">{item.description}</CardDescription>
         </CardContent>
         <CardFooter className="p-4 pt-0 flex flex-wrap gap-2">
-          {item.tags.slice(0, 3).map((tag) => (
+          {item.tags?.slice(0, 3).map((tag) => (
             <Badge key={tag} variant="secondary">{tag}</Badge>
           ))}
           {!item.isContainer && <Badge variant="outline">Qtd: {item.quantity}</Badge>}
@@ -173,3 +189,5 @@ export function ItemCard({ item, onContainerClick, onItemSave, onItemDelete, onI
     </>
   );
 }
+
+    

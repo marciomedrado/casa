@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -14,14 +14,18 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, BrainCircuit } from 'lucide-react';
+import { PlusCircle, BrainCircuit, Camera, Upload } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import type { Item, SubContainer, Location } from '@/lib/types';
+import type { Item, Location } from '@/lib/types';
 import { Checkbox } from '../ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { suggestCategories } from '@/ai/ai-smart-categorization';
+import { identifyItem as aiIdentifyItem } from '@/ai/flows/identify-item-flow';
+import Image from 'next/image';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 function generateRandomId(prefix: string) {
     return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -30,7 +34,7 @@ function generateRandomId(prefix: string) {
 export function AddItemDialog({ 
     children, 
     itemToEdit,
-    parentContainer: initialParentContainer, // This is the container the user is currently "in"
+    parentContainer: initialParentContainer,
     open: controlledOpen,
     onOpenChange: setControlledOpen,
     isReadOnly = false,
@@ -64,17 +68,23 @@ export function AddItemDialog({
     const [subContainer, setSubContainer] = useState<SubContainer | null>(null);
     const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
     const [isThinking, setIsThinking] = useState(false);
+    const [isIdentifying, setIsIdentifying] = useState(false);
     const [locationId, setLocationId] = useState<string | null>(null);
     const [parentId, setParentId] = useState<string | null>(null);
+    const [imageDataUri, setImageDataUri] = useState<string | null>(null);
+    const [showCamera, setShowCamera] = useState(false);
+    const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+    
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
 
     const isEditMode = itemToEdit !== undefined;
 
-    const { flattenedLocations, locationMap, allRawLocations, itemMap } = useMemo(() => {
+    const { flattenedLocations, locationMap, itemMap } = useMemo(() => {
         const flatList: { id: string; name: string; fullPath: string; level: number }[] = [];
         const locMap = new Map<string, Omit<Location, 'children'>>();
-        const rawLocations: Omit<Location, 'children'>[] = [];
-        
         const iMap = new Map<string, Item>(allItems.map(item => [item.id, item]));
 
         const flatten = (locations: Location[], level: number = 0, parentPath: string[] = []) => {
@@ -82,7 +92,6 @@ export function AddItemDialog({
             for (const loc of locations) {
                 const { children, ...rest } = loc;
                 locMap.set(loc.id, rest);
-                rawLocations.push(rest);
                 const currentPath = [...parentPath, loc.name];
                 flatList.push({ id: loc.id, name: loc.name, fullPath: currentPath.join(' / '), level });
                 if (children && children.length > 0) {
@@ -91,13 +100,13 @@ export function AddItemDialog({
             }
         };
         flatten(locations || []);
-        return { flattenedLocations: flatList, locationMap: locMap, allRawLocations: rawLocations, itemMap: iMap };
+        return { flattenedLocations: flatList, locationMap: locMap, itemMap: iMap };
     }, [locations, allItems]);
 
-    const buildFullPath = (locId: string | null, containerId: string | null): string[] => {
+
+    const buildFullPath = (locId: string | null, containerId: string | null, subCont: SubContainer | null): string[] => {
         let path: string[] = [];
         
-        // 1. Build path from locations
         let currentLocId = locId;
         while(currentLocId && locationMap.has(currentLocId)) {
             const loc = locationMap.get(currentLocId)!;
@@ -105,7 +114,6 @@ export function AddItemDialog({
             currentLocId = loc.parentId;
         }
 
-        // 2. Build path from containers
         let containerPath: string[] = [];
         let currentContainerId = containerId;
         while(currentContainerId && itemMap.has(currentContainerId)) {
@@ -113,8 +121,15 @@ export function AddItemDialog({
             containerPath.unshift(container.name);
             currentContainerId = container.parentId;
         }
+        
+        path = [...path, ...containerPath];
 
-        return [...path, ...containerPath];
+        if (subCont) {
+            const subContainerName = `${subCont.type === 'door' ? 'Porta' : 'Gaveta'} ${subCont.number}`;
+            path.push(subContainerName);
+        }
+
+        return path;
     };
 
 
@@ -125,13 +140,14 @@ export function AddItemDialog({
                 setName(itemToEdit.name);
                 setDescription(itemToEdit.description);
                 setQuantity(itemToEdit.quantity);
-                setTags(itemToEdit.tags);
+                setTags(itemToEdit.tags || []);
                 setIsContainer(itemToEdit.isContainer);
                 setDoorCount(itemToEdit.doorCount ?? 0);
                 setDrawerCount(itemToEdit.drawerCount ?? 0);
                 setSubContainer(itemToEdit.subContainer ?? null);
                 setLocationId(itemToEdit.locationId);
                 setParentId(itemToEdit.parentId ?? null);
+                setImageDataUri(itemToEdit.imageUrl);
             } else {
                  // ADD MODE
                  if (initialParentContainer) {
@@ -156,8 +172,41 @@ export function AddItemDialog({
             setSubContainer(null);
             setLocationId(null);
             setParentId(null);
+            setImageDataUri(null);
+            setShowCamera(false);
+            setHasCameraPermission(null);
+            const stream = videoRef.current?.srcObject as MediaStream | null;
+            stream?.getTracks().forEach(track => track.stop());
         }
     }, [open, itemToEdit, initialParentContainer, flattenedLocations]);
+
+    useEffect(() => {
+        if (showCamera) {
+            const getCameraPermission = async () => {
+              try {
+                const stream = await navigator.mediaDevices.getUserMedia({video: true});
+                setHasCameraPermission(true);
+        
+                if (videoRef.current) {
+                  videoRef.current.srcObject = stream;
+                }
+              } catch (error) {
+                console.error('Error accessing camera:', error);
+                setHasCameraPermission(false);
+                toast({
+                  variant: 'destructive',
+                  title: 'Acesso à câmera negado',
+                  description: 'Por favor, habilite as permissões de câmera nas configurações do seu navegador para usar este aplicativo.',
+                });
+              }
+            };
+        
+            getCameraPermission();
+        } else {
+            const stream = videoRef.current?.srcObject as MediaStream | null;
+            stream?.getTracks().forEach(track => track.stop());
+        }
+    }, [showCamera, toast]);
 
 
     const availableContainersInLocation = useMemo(() => {
@@ -165,7 +214,7 @@ export function AddItemDialog({
         return allItems.filter(item => 
             item.isContainer && 
             item.locationId === locationId && 
-            item.id !== itemToEdit?.id // Prevent item from being its own parent
+            item.id !== itemToEdit?.id
         );
     }, [locationId, allItems, itemToEdit]);
 
@@ -193,8 +242,10 @@ export function AddItemDialog({
     };
 
     useEffect(() => {
-        if (!name && !description) return;
-        if (!open || isReadOnly) return;
+        if ((!name && !description) || !open || isReadOnly) {
+            setSuggestedTags([]);
+            return;
+        }
 
         const handler = setTimeout(() => {
             handleSuggestTags();
@@ -208,12 +259,41 @@ export function AddItemDialog({
     const handleSuggestTags = async () => {
         if (!name && !description || isReadOnly) return;
         setIsThinking(true);
-        setTimeout(() => {
-            const allSuggestions = ['ferramenta', 'eletrônico', 'frágil', 'livro', 'documento', 'cozinha'];
-            const suggestions = allSuggestions.filter(t => !tags.includes(t) && (name.includes(t) || description.includes(t)));
-            setSuggestedTags(suggestions.slice(0, 3));
+        try {
+            const result = await suggestCategories({itemName: name, itemDescription: description });
+            const allSuggestions = [...result.suggestedCategories, ...result.suggestedTags];
+            const uniqueSuggestions = Array.from(new Set(allSuggestions));
+            setSuggestedTags(uniqueSuggestions.filter(t => !tags.includes(t)));
+        } catch (error) {
+            console.error("Error suggesting tags:", error);
+            // Silently fail, no need to bother user
+        } finally {
             setIsThinking(false);
-        }, 1500);
+        }
+    }
+
+    const handleIdentifyItem = async () => {
+        if (!imageDataUri || isReadOnly) return;
+        setIsIdentifying(true);
+        try {
+            const result = await aiIdentifyItem({ photoDataUri: imageDataUri });
+            if (result.itemName) {
+                setName(result.itemName);
+                toast({
+                    title: "Item Identificado!",
+                    description: `Sugerimos um nome para o seu item.`,
+                });
+            }
+        } catch (error) {
+            console.error("Error identifying item:", error);
+            toast({
+                variant: 'destructive',
+                title: "Falha na Identificação",
+                description: "Não foi possível identificar o item a partir da imagem.",
+            });
+        } finally {
+            setIsIdentifying(false);
+        }
     }
     
     const addSuggestedTag = (tag: string) => {
@@ -230,6 +310,15 @@ export function AddItemDialog({
             return;
         }
 
+        if (!name) {
+             toast({
+                variant: 'destructive',
+                title: 'Erro de Validação',
+                description: 'O nome do item é obrigatório.',
+            });
+            return;
+        }
+
         if (!locationId) {
             toast({
                 variant: 'destructive',
@@ -239,17 +328,11 @@ export function AddItemDialog({
             return;
         }
 
-        let finalPath = buildFullPath(locationId, parentId);
-        
-        if (parentContainer && subContainer) {
-            const subContainerName = `${subContainer.type === 'door' ? 'Porta' : 'Gaveta'} ${subContainer.number}`;
-            finalPath.push(subContainerName);
-        }
+        const finalPath = buildFullPath(locationId, parentId, subContainer);
 
         const baseItem = isEditMode && itemToEdit ? itemToEdit : {
             id: generateRandomId('item'),
-            propertyId: parentContainer?.propertyId || (allRawLocations.length > 0 ? allRawLocations[0].propertyId : 'prop-1'),
-            imageUrl: '', 
+            propertyId: parentContainer?.propertyId || (locationMap.get(locationId)?.propertyId) || 'prop-1',
             imageHint: 'new item',
         };
 
@@ -266,11 +349,8 @@ export function AddItemDialog({
             parentId: parentId,
             locationPath: finalPath,
             subContainer: parentContainer ? subContainer : null,
+            imageUrl: imageDataUri || (isEditMode && itemToEdit?.imageUrl) || `https://picsum.photos/seed/${generateRandomId('img')}/400/300`,
         };
-        
-        if (!isEditMode) {
-             finalItem.imageUrl = `https://picsum.photos/seed/${generateRandomId('img')}/400/300`;
-        }
 
         onItemSave(finalItem);
 
@@ -299,6 +379,30 @@ export function AddItemDialog({
         }
     }
 
+    const handleTakePhoto = () => {
+        if (canvasRef.current && videoRef.current) {
+            const canvas = canvasRef.current;
+            const video = videoRef.current;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d')?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+            const dataUri = canvas.toDataURL('image/jpeg');
+            setImageDataUri(dataUri);
+            setShowCamera(false);
+        }
+    }
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                setImageDataUri(event.target?.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
     const dialogTitle = isReadOnly ? 'Visualizar Item' : (isEditMode ? 'Editar Item' : 'Adicionar Novo Item');
     const dialogDescription = isReadOnly
         ? 'Veja os detalhes do seu item abaixo.'
@@ -323,12 +427,71 @@ export function AddItemDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Imagem</Label>
+                <div className="col-span-3">
+                    <div className="w-full aspect-video rounded-md bg-muted flex items-center justify-center overflow-hidden relative">
+                         {showCamera ? (
+                            <>
+                                <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
+                                {hasCameraPermission === false && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 p-4">
+                                        <Alert variant="destructive">
+                                            <AlertTitle>Acesso à Câmera Necessário</AlertTitle>
+                                            <AlertDescription>
+                                                Por favor, permita o acesso à câmera para usar este recurso.
+                                            </AlertDescription>
+                                        </Alert>
+                                    </div>
+                                )}
+                            </>
+                        ) : imageDataUri ? (
+                            <Image src={imageDataUri} alt="Preview do Item" layout="fill" objectFit="cover" />
+                        ) : (
+                            <span className="text-sm text-muted-foreground">Sem imagem</span>
+                        )}
+                    </div>
+                     {!isReadOnly && (
+                        <div className="flex gap-2 mt-2">
+                           {showCamera ? (
+                               <>
+                                <Button type="button" onClick={handleTakePhoto} disabled={!hasCameraPermission} className="flex-1">Capturar</Button>
+                                <Button type="button" variant="outline" onClick={() => setShowCamera(false)}>Cancelar</Button>
+                               </>
+                           ) : (
+                                <>
+                                <Button type="button" variant="outline" className="flex-1" onClick={() => setShowCamera(true)}><Camera className="mr-2"/>Tirar Foto</Button>
+                                <Button type="button" variant="outline" className="flex-1" onClick={() => fileInputRef.current?.click()}><Upload className="mr-2"/>Carregar</Button>
+                                <input type="file" ref={fileInputRef} accept="image/*" onChange={handleFileSelect} className="hidden" />
+                               </>
+                           )}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+             {imageDataUri && !isReadOnly && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <div />
+                    <div className="col-span-3">
+                         <Button onClick={handleIdentifyItem} disabled={isIdentifying} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                            <BrainCircuit className={cn("mr-2", isIdentifying && "animate-spin")} />
+                            {isIdentifying ? 'Identificando...' : 'Identificar com IA'}
+                        </Button>
+                    </div>
+                </div>
+            )}
+            
+            <canvas ref={canvasRef} className="hidden"></canvas>
+
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="name" className="text-right">
               Nome
