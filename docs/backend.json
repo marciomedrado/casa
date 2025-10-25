@@ -660,3 +660,4 @@
     "reasoning": "The Firestore structure is designed to facilitate a home inventory application with user roles (owner, editor, viewer) per property. It prioritizes authorization independence and efficient querying.  \n\nAuthorization Independence:  The `PropertyMember` collection holds user roles within properties.  While the location, items and barcodes collections are nested under the property, there is no need for the rules to use get() since authorization is managed using the user id. This ensures atomic operations.\n\nQAPs:\n*   List all Properties a user has access to:\n    *   Using collection group query on PropertyMember collection, get all properties a user is member of.\n    *   List Properties using the result of the first query.\n*   List all Items in a Property:\n    *   Since Items collection is nested under Properties, a simple collection query can get all Items in a property."
   }
 }
+    
