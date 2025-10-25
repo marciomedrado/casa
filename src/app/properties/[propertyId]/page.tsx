@@ -10,6 +10,7 @@ import type { Location, Item } from '@/lib/types';
 import * as storage from '@/lib/storage';
 import { LocationBrowser } from '@/components/inventory/location-browser';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type ViewMode = 'all-locations' | 'items' | 'all-containers';
 
@@ -24,6 +25,7 @@ export default function PropertyPage() {
   const [allPropertyLocations, setAllPropertyLocations] = useState<Location[]>([]);
   const [allItems, setAllItems] = useState<Item[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('all-locations');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     storage.initializeDatabase();
@@ -33,9 +35,8 @@ export default function PropertyPage() {
         const locations = storage.getLocations(propertyId) as Location[];
         setAllPropertyLocations(locations);
         setAllItems(storage.getItems(propertyId));
-    } else {
-        notFound();
     }
+    setIsLoading(false);
   }, [propertyId]);
 
   const { locationTree, rootLocations } = useMemo(() => {
@@ -167,8 +168,22 @@ export default function PropertyPage() {
     return { filteredItems: items, selectedLocationName };
   }, [selectedLocationId, searchQuery, allItems, allPropertyLocations, viewMode, property]);
   
+  if (isLoading) {
+    return (
+        <div className="p-8">
+            <Skeleton className="h-8 w-1/4 mb-4" />
+            <Skeleton className="h-4 w-1/2" />
+            <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <Skeleton className="h-48 w-full" />
+                <Skeleton className="h-48 w-full" />
+                <Skeleton className="h-48 w-full" />
+            </div>
+        </div>
+    )
+  }
+
   if (!property) {
-    return null;
+    notFound();
   }
 
   const shouldShowLocationBrowser = viewMode === 'all-locations' && !searchQuery && !selectedLocationId;
