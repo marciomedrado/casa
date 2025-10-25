@@ -12,9 +12,11 @@ import { initializeDatabase, getProperties, saveProperty, deleteProperty } from 
 
 export default function Dashboard() {
   const [properties, setProperties] = useState<Property[]>([]);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    // Initialize DB and load properties from localStorage on client side
+    // This effect runs only on the client, after hydration
+    setIsClient(true);
     initializeDatabase();
     setProperties(getProperties());
   }, []);
@@ -51,7 +53,7 @@ export default function Dashboard() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {properties.map((property) => (
+          {isClient && properties.map((property) => (
             <PropertyCard 
               key={property.id} 
               property={property} 

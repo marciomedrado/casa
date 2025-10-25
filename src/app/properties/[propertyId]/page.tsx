@@ -205,7 +205,7 @@ export default function PropertyPage() {
     )
   }
 
-  if (!property) {
+  if (!isLoading && !property) {
     notFound();
   }
 
@@ -213,10 +213,10 @@ export default function PropertyPage() {
 
   return (
     <AppLayout 
-      pageTitle={property.name} 
+      pageTitle={property?.name ?? ''} 
       locations={locationTree} 
       allRawLocations={allPropertyLocations}
-      propertyId={property.id}
+      propertyId={propertyId}
       selectedLocationId={selectedLocationId}
       onLocationSelect={handleLocationSelect}
       onLocationSave={handleLocationSave}
@@ -228,7 +228,7 @@ export default function PropertyPage() {
         <LocationBrowser 
             locations={rootLocations}
             allRawLocations={allPropertyLocations}
-            propertyId={property.id}
+            propertyId={propertyId}
             onLocationSelect={(id) => handleLocationSelect(id)}
             onLocationSave={handleLocationSave}
             onLocationDelete={handleLocationDelete}
