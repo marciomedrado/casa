@@ -25,9 +25,10 @@ export default function PropertyPage() {
   const [allPropertyLocations, setAllPropertyLocations] = useState<Location[]>([]);
   const [allItems, setAllItems] = useState<Item[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('all-locations');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     storage.initializeDatabase();
     const currentProperty = storage.getPropertyById(propertyId);
     if (currentProperty) {
@@ -35,8 +36,10 @@ export default function PropertyPage() {
         const locations = storage.getLocations(propertyId) as Location[];
         setAllPropertyLocations(locations);
         setAllItems(storage.getItems(propertyId));
+    } else {
+        // If property is not found on the client, then it's a 404
+        notFound();
     }
-    setIsLoading(false);
   }, [propertyId]);
 
   const { locationTree, rootLocations } = useMemo(() => {
@@ -178,7 +181,7 @@ export default function PropertyPage() {
     return { filteredItems: items, selectedLocationName };
   }, [selectedLocationId, searchQuery, allItems, allPropertyLocations, viewMode, property]);
   
-  if (isLoading) {
+  if (!isClient || !property) {
     return (
         <AppLayout 
           pageTitle="Carregando..."
@@ -203,10 +206,6 @@ export default function PropertyPage() {
             </div>
         </AppLayout>
     )
-  }
-
-  if (!isLoading && !property) {
-    notFound();
   }
 
   const shouldShowLocationBrowser = viewMode === 'all-locations' && !searchQuery && !selectedLocationId;
