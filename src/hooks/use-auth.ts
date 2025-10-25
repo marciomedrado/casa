@@ -11,27 +11,26 @@ export function useAuth() {
   const router = useRouter();
 
   const login = useCallback(async () => {
-    if (!auth) return;
+    if (!auth || !firestore) return;
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      if (credential) {
-        const userDocRef = doc(firestore, 'users', result.user.uid);
-        const userDoc = await getDoc(userDocRef);
+      
+      const userDocRef = doc(firestore, 'users', result.user.uid);
+      const userDoc = await getDoc(userDocRef);
 
-        if (!userDoc.exists()) {
-          const isAdm = result.user.email === "marciomedrado@gmail.com";
-          await setDoc(userDocRef, {
-            uid: result.user.uid,
-            displayName: result.user.displayName,
-            email: result.user.email,
-            photoURL: result.user.photoURL,
-            role: isAdm ? 'admin' : 'free',
-            createdAt: serverTimestamp(),
-          });
-        }
+      if (!userDoc.exists()) {
+        const isAdm = result.user.email === "marciomedrado@gmail.com";
+        await setDoc(userDocRef, {
+          uid: result.user.uid,
+          displayName: result.user.displayName,
+          email: result.user.email,
+          photoURL: result.user.photoURL,
+          role: isAdm ? 'admin' : 'free',
+          createdAt: serverTimestamp(),
+        });
       }
+      
       router.push('/');
     } catch (error) {
       console.error('Error during sign-in:', error);
