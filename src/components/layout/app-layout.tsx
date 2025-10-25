@@ -52,6 +52,12 @@ export function AppLayout({
         <SidebarContent>
           <SidebarGroup>
             <SidebarMenu>
+               <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => onLocationSelect(null)} isActive={selectedLocationId === null} tooltip="Todos os Locais">
+                  <LayoutGrid />
+                  <span>Todos os Locais</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => onLocationSelect(null)} isActive={selectedLocationId === null} tooltip="Todos os Itens">
                   <LayoutGrid />
