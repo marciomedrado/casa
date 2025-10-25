@@ -45,5 +45,5 @@ export type Item = {
   propertyId: string;
   locationPath: string[];
   subContainer?: SubContainer | null; // Which door/drawer it's in
-  children?: Item[];
 };
+
