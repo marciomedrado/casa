@@ -92,9 +92,12 @@ export function deleteProperty(propertyId: string): void {
 
 
 // --- Locations API ---
-export function getLocations(propertyId: string): Location[] {
+export function getLocations(propertyId?: string): Location[] {
     const allLocations = getFromStorage<Omit<Location, 'children'>>(LOCATIONS_KEY);
-    return allLocations.filter(l => l.propertyId === propertyId);
+    if (propertyId) {
+        return allLocations.filter(l => l.propertyId === propertyId);
+    }
+    return allLocations;
 }
 
 export function saveLocation(location: Omit<Location, 'children' | 'propertyId'> & { id?: string }, propertyId: string): Location {
@@ -125,9 +128,12 @@ export function deleteLocation(locationId: string): void {
 }
 
 // --- Items API ---
-export function getItems(propertyId: string): Item[] {
+export function getItems(propertyId?: string): Item[] {
     const allItems = getFromStorage<Item>(ITEMS_KEY);
-    return allItems.filter(i => i.propertyId === propertyId);
+    if (propertyId) {
+        return allItems.filter(i => i.propertyId === propertyId);
+    }
+    return allItems;
 }
 
 export function saveItem(item: Item, propertyId: string): Item {

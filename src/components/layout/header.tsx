@@ -19,6 +19,9 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { getProperties, getLocations, getItems, restoreFromCSV } from '@/lib/storage';
+import type { Location, Item } from '@/lib/types';
+
+const DB_PREFIX = 'casa-organizzata';
 
 export function Header({ 
   showSidebarTrigger = false,
@@ -41,6 +44,9 @@ export function Header({
             if (Array.isArray(val)) {
                 return `"${val.join(';')}"`;
             }
+            if (typeof val === 'object' && val !== null) {
+              return `"${JSON.stringify(val).replace(/"/g, '""')}"`;
+            }
             return `"${String(val).replace(/"/g, '""')}"`;
         }).join(',')
     );
@@ -62,12 +68,9 @@ export function Header({
         }
     }
     
-    const currentUrl = window.location.pathname;
-    const propertyId = currentUrl.split('/')[2];
-
     const properties = getProperties();
-    const locations = getFromStorage<Location[]>(`${DB_PREFIX}-locations`);
-    const items = getFromStorage<Item[]>(`${DB_PREFIX}-items`);
+    const locations = getLocations();
+    const items = getItems();
 
 
     const propertiesCSV = convertToCSV(properties, ['id', 'name', 'address', 'imageUrl', 'imageHint']);
