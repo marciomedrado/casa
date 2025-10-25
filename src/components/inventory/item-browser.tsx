@@ -36,7 +36,6 @@ export function ItemBrowser({
   }, [currentContainerId, itemMap]);
 
   const { looseItems, drawerItems, doorItems } = useMemo(() => {
-    // Determine which items to display: items in the current container OR the globally filtered visibleItems
     const itemsToProcess = currentContainerId 
       ? allItems.filter(item => item.parentId === currentContainerId)
       : visibleItems;
@@ -46,18 +45,13 @@ export function ItemBrowser({
     const doorItems: { [key: number]: Item[] } = {};
 
     itemsToProcess.forEach(item => {
-      // Only process items that are actually inside the current container if one is selected
-      if (currentContainerId && item.parentId !== currentContainerId) {
-          return;
-      }
-      
       if (item.subContainer?.type === 'drawer') {
         if (!drawerItems[item.subContainer.number]) {
           drawerItems[item.subContainer.number] = [];
         }
         drawerItems[item.subContainer.number].push(item);
       } else if (item.subContainer?.type === 'door') {
-         if (!doorItems[item.subContainer.number]) {
+         if (!doorItems[Number(item.subContainer.number)]) {
           doorItems[Number(item.subContainer.number)] = [];
         }
         doorItems[Number(item.subContainer.number)].push(item);
