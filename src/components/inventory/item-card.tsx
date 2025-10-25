@@ -74,9 +74,9 @@ export function ItemCard({ item, onContainerClick, onItemSave, onItemDelete, onI
           item.isContainer ? "cursor-pointer" : "cursor-default"
         )}
       >
-        <CardHeader className="flex flex-row items-center justify-end gap-4 p-4">
+        <CardHeader className="flex flex-row items-center justify-start gap-4 p-4">
            {item.isContainer && (
-            <div className="flex items-center justify-center bg-secondary rounded-md h-10 w-10 shrink-0 mr-auto">
+            <div className="flex items-center justify-center bg-secondary rounded-md h-10 w-10 shrink-0">
               <PackageOpen className="h-6 w-6 text-muted-foreground" />
             </div>
           )}
