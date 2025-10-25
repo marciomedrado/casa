@@ -2,7 +2,6 @@
 
 'use client';
 
-import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Item, Location } from '@/lib/types';
@@ -94,17 +93,8 @@ export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, 
           item.isContainer ? "cursor-pointer" : "cursor-default"
         )}
       >
-        <CardHeader className="p-0">
-          <div className="relative aspect-[4/3] w-full">
-            <Image
-              src={item.imageUrl}
-              alt={item.name}
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-              className="object-cover"
-              data-ai-hint={item.imageHint}
-            />
-            <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <CardContent className="p-4 flex-1 relative">
+           <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
               {!item.isContainer && (
                  <Button
                     variant="secondary"
@@ -113,7 +103,7 @@ export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, 
                       e.stopPropagation();
                       setIsViewDialogOpen(true);
                     }}
-                    className="rounded-full"
+                    className="rounded-full h-8 w-8"
                   >
                     <Eye className="h-4 w-4" />
                     <span className="sr-only">Visualizar Item</span>
@@ -127,26 +117,22 @@ export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, 
                     e.stopPropagation();
                     setIsEditDialogOpen(true);
                   }}
-                  className="rounded-full"
+                  className="rounded-full h-8 w-8"
                 >
                   <Pencil className="h-4 w-4" />
                   <span className="sr-only">Editar Item</span>
                 </Button>
             </div>
-
-            {item.isContainer && (
+             {item.isContainer && (
               <div 
                 onClick={(e) => { e.stopPropagation(); onContainerClick(item.id); }}
-                className="absolute bottom-2 left-2 flex items-center gap-1 rounded-full bg-black/50 px-2 py-1 text-xs text-white cursor-pointer"
+                className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-black/50 px-2 py-1 text-xs text-white cursor-pointer"
               >
                 <PackageOpen className="h-3 w-3" />
                 <span>Container</span>
               </div>
             )}
-          </div>
-        </CardHeader>
-        <CardContent className="p-4 flex-1">
-          <CardTitle className="text-lg mb-1 line-clamp-1">{item.name}</CardTitle>
+          <CardTitle className="text-lg mb-1 line-clamp-1 pr-10">{item.name}</CardTitle>
           <div className="flex items-center text-sm text-muted-foreground mb-1">
               <MapPin className="h-4 w-4 mr-2 shrink-0" />
               <span className="truncate">{locationDisplayPath()}</span>
