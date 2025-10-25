@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -71,24 +70,28 @@ export function AddItemDialog({
 
     const isEditMode = itemToEdit !== undefined;
 
-    const { flattenedLocations, locationMap, itemMap } = useMemo(() => {
+    const { flattenedLocations, locationMap, allRawLocations, itemMap } = useMemo(() => {
         const flatList: { id: string; name: string; fullPath: string; level: number }[] = [];
-        const locMap = new Map<string, {name: string, parentId: string | null}>();
+        const locMap = new Map<string, Omit<Location, 'children'>>();
+        const rawLocations: Omit<Location, 'children'>[] = [];
+        
         const iMap = new Map<string, Item>(allItems.map(item => [item.id, item]));
 
         const flatten = (locations: Location[], level: number = 0, parentPath: string[] = []) => {
             if (!locations) return;
             for (const loc of locations) {
-                locMap.set(loc.id, { name: loc.name, parentId: loc.parentId });
+                const { children, ...rest } = loc;
+                locMap.set(loc.id, rest);
+                rawLocations.push(rest);
                 const currentPath = [...parentPath, loc.name];
                 flatList.push({ id: loc.id, name: loc.name, fullPath: currentPath.join(' / '), level });
-                if (loc.children && loc.children.length > 0) {
-                    flatten(loc.children, level + 1, currentPath);
+                if (children && children.length > 0) {
+                    flatten(children, level + 1, currentPath);
                 }
             }
         };
         flatten(locations || []);
-        return { flattenedLocations: flatList, locationMap: locMap, itemMap: iMap };
+        return { flattenedLocations: flatList, locationMap: locMap, allRawLocations: rawLocations, itemMap: iMap };
     }, [locations, allItems]);
 
     const buildFullPath = (locId: string | null, containerId: string | null): string[] => {
@@ -245,7 +248,7 @@ export function AddItemDialog({
 
         const baseItem = isEditMode && itemToEdit ? itemToEdit : {
             id: generateRandomId('item'),
-            propertyId: parentContainer?.propertyId || (locations && locations.length > 0 ? locations[0].propertyId : 'prop-1'),
+            propertyId: parentContainer?.propertyId || (allRawLocations.length > 0 ? allRawLocations[0].propertyId : 'prop-1'),
             imageUrl: '', 
             imageHint: 'new item',
         };
@@ -518,3 +521,5 @@ export function AddItemDialog({
     </Dialog>
   );
 }
+
+    
