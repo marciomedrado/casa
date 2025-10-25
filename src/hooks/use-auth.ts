@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirebase } from '@/firebase';
 import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
@@ -12,13 +12,10 @@ export function useAuth() {
   const router = useRouter();
 
   const login = useCallback(async () => {
-    if (!auth || !firestore) return false;
+    if (!auth || !firestore) return;
     
-    // Primeiro, faz o logout para limpar qualquer sessão em cache.
-    await signOut(auth);
-
-    const provider = new GoogleAuthProvider();
     try {
+      const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       
       const userDocRef = doc(firestore, 'users', result.user.uid);
@@ -35,20 +32,20 @@ export function useAuth() {
           createdAt: serverTimestamp(),
         });
       }
-      return true;
+      // O redirecionamento será tratado pelo useEffect na página de login
     } catch (error) {
       console.error('Error during sign-in:', error);
-      // Evita redirecionamento se o usuário fechar o pop-up
-      if ((error as {code?:string}).code === 'auth/popup-closed-by-user') {
-        return false;
+      // Evita o redirecionamento se o usuário fechar o pop-up
+      if ((error as {code?:string}).code !== 'auth/popup-closed-by-user') {
+        // Lidar com outros erros aqui se necessário
       }
-      return false;
     }
   }, [auth, firestore]);
 
   const logout = useCallback(async () => {
     if (!auth) return;
     await signOut(auth);
+    // Após o logout, sempre redireciona para a página de login.
     router.push('/login');
   }, [auth, router]);
 

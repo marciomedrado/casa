@@ -21,18 +21,14 @@ export default function LoginPage() {
     const { user, login, loading } = useAuth();
     const router = useRouter();
 
-    // This useEffect was causing the premature redirect. It has been removed.
-    // useEffect(() => {
-    //     if (!loading && user) {
-    //         router.push('/');
-    //     }
-    // }, [user, loading, router]);
-    
-    const handleLogin = async () => {
-        const success = await login();
-        if (success) {
+    useEffect(() => {
+        if (!loading && user) {
             router.push('/');
         }
+    }, [user, loading, router]);
+    
+    const handleLogin = async () => {
+        await login();
     }
 
     return (
