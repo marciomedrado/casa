@@ -31,12 +31,13 @@ function generateRandomId(prefix: string) {
 export function AddItemDialog({ 
     children, 
     itemToEdit,
-    parentContainer,
+    parentContainer: initialParentContainer, // This is the container the user is currently "in"
     open: controlledOpen,
     onOpenChange: setControlledOpen,
     isReadOnly = false,
     onItemSave,
     locations,
+    allItems
 }: { 
     children?: React.ReactNode, 
     itemToEdit?: Item,
@@ -46,6 +47,7 @@ export function AddItemDialog({
     isReadOnly?: boolean,
     onItemSave: (item: Item) => void,
     locations: Location[],
+    allItems: Item[],
 }) {
     const [internalOpen, setInternalOpen] = useState(false);
     
@@ -64,6 +66,7 @@ export function AddItemDialog({
     const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
     const [isThinking, setIsThinking] = useState(false);
     const [locationId, setLocationId] = useState<string | null>(null);
+    const [parentId, setParentId] = useState<string | null>(null);
     const { toast } = useToast();
 
     const isEditMode = itemToEdit !== undefined;
@@ -87,15 +90,22 @@ export function AddItemDialog({
         return { flattenedLocations: flatList, locationMap: map };
     }, [locations]);
 
-    const buildFullPath = (locId: string | null) => {
-        if (!locId) return [];
-        const path: string[] = [];
-        let currentId: string | null = locId;
-        while(currentId && locationMap.has(currentId)) {
-            const loc = locationMap.get(currentId)!;
+    const buildFullPath = (locId: string | null, containerId: string | null) => {
+        let path: string[] = [];
+        let currentLocId = locId;
+        while(currentLocId && locationMap.has(currentLocId)) {
+            const loc = locationMap.get(currentLocId)!;
             path.unshift(loc.name);
-            currentId = loc.parentId;
+            currentLocId = loc.parentId;
         }
+
+        if (containerId) {
+            const container = allItems.find(i => i.id === containerId);
+            if (container) {
+                path.push(container.name);
+            }
+        }
+        
         return path;
     };
 
@@ -103,6 +113,7 @@ export function AddItemDialog({
     useEffect(() => {
         if (open) {
             if (itemToEdit) {
+                // EDIT MODE
                 setName(itemToEdit.name);
                 setDescription(itemToEdit.description);
                 setQuantity(itemToEdit.quantity);
@@ -112,11 +123,15 @@ export function AddItemDialog({
                 setDrawerCount(itemToEdit.drawerCount ?? 0);
                 setSubContainer(itemToEdit.subContainer ?? null);
                 setLocationId(itemToEdit.locationId);
+                setParentId(itemToEdit.parentId ?? null);
             } else {
-                 if (parentContainer) {
-                    setLocationId(parentContainer.locationId);
+                 // ADD MODE
+                 if (initialParentContainer) {
+                    setLocationId(initialParentContainer.locationId);
+                    setParentId(initialParentContainer.id);
                 } else if (flattenedLocations.length > 0) {
                     setLocationId(null);
+                    setParentId(null);
                 }
             }
         } else if (!open) {
@@ -132,8 +147,25 @@ export function AddItemDialog({
             setDrawerCount(0);
             setSubContainer(null);
             setLocationId(null);
+            setParentId(null);
         }
-    }, [open, itemToEdit, parentContainer, flattenedLocations]);
+    }, [open, itemToEdit, initialParentContainer, flattenedLocations]);
+
+
+    const availableContainersInLocation = useMemo(() => {
+        if (!locationId) return [];
+        return allItems.filter(item => 
+            item.isContainer && 
+            item.locationId === locationId && 
+            item.id !== itemToEdit?.id // Prevent item from being its own parent
+        );
+    }, [locationId, allItems, itemToEdit]);
+
+    const parentContainer = useMemo(() => {
+        if (!parentId) return null;
+        return allItems.find(item => item.id === parentId) ?? null;
+    }, [parentId, allItems]);
+
 
     const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (isReadOnly) return;
@@ -199,21 +231,16 @@ export function AddItemDialog({
             return;
         }
 
-        let finalPath = buildFullPath(locationId);
+        let finalPath = buildFullPath(locationId, parentId);
         
-        // Append container names to the path
-        if (parentContainer?.name) {
-            finalPath.push(parentContainer.name);
-        }
-        if (subContainer) {
+        if (parentContainer && subContainer) {
             const subContainerName = `${subContainer.type === 'door' ? 'Porta' : 'Gaveta'} ${subContainer.number}`;
             finalPath.push(subContainerName);
         }
 
         const baseItem = isEditMode && itemToEdit ? itemToEdit : {
             id: generateRandomId('item'),
-            propertyId: parentContainer?.propertyId || (locations && locations.length > 0 ? locations[0].propertyId : 'prop-1'), // Improved fallback
-            parentId: parentContainer?.id ?? null,
+            propertyId: parentContainer?.propertyId || (locations && locations.length > 0 ? locations[0].propertyId : 'prop-1'),
             imageUrl: '', 
             imageHint: 'new item',
         };
@@ -228,11 +255,11 @@ export function AddItemDialog({
             doorCount: isContainer ? doorCount : undefined,
             drawerCount: isContainer ? drawerCount : undefined,
             locationId: locationId,
+            parentId: parentId,
             locationPath: finalPath,
             subContainer: parentContainer ? subContainer : null,
         };
         
-        // Only generate new image for new items
         if (!isEditMode) {
              finalItem.imageUrl = `https://picsum.photos/seed/${generateRandomId('img')}/400/300`;
         }
@@ -273,6 +300,17 @@ export function AddItemDialog({
 
   const hasDoors = parentContainer && parentContainer.doorCount && parentContainer.doorCount > 0;
   const hasDrawers = parentContainer && parentContainer.drawerCount && parentContainer.drawerCount > 0;
+  
+  const handleLocationChange = (newLocationId: string) => {
+    setLocationId(newLocationId);
+    setParentId(null);
+    setSubContainer(null);
+  }
+
+  const handleParentContainerChange = (newParentId: string | null) => {
+    setParentId(newParentId);
+    setSubContainer(null);
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -295,11 +333,12 @@ export function AddItemDialog({
             </Label>
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" readOnly={isReadOnly} />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
+          
+           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="location" className="text-right">
               Cômodo
             </Label>
-            <Select onValueChange={(value) => setLocationId(value)} value={locationId ?? ''} disabled={isReadOnly || !!parentContainer}>
+            <Select onValueChange={handleLocationChange} value={locationId ?? ''} disabled={isReadOnly || (!isEditMode && !!initialParentContainer)}>
                 <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Selecione um cômodo" />
                 </SelectTrigger>
@@ -312,6 +351,26 @@ export function AddItemDialog({
                 </SelectContent>
             </Select>
           </div>
+
+          {!isContainer && (
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="parentContainer" className="text-right">
+                Container
+                </Label>
+                <Select onValueChange={(value) => handleParentContainerChange(value === 'null' ? null : value)} value={parentId ?? 'null'} disabled={isReadOnly || !locationId || (!isEditMode && !!initialParentContainer)}>
+                    <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Selecione um container (opcional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="null">Nenhum (item solto)</SelectItem>
+                        {availableContainersInLocation.map(c => (
+                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+           )}
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="isContainer" className="text-right">
                 É um container?

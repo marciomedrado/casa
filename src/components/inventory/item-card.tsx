@@ -21,7 +21,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
-export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, onItemDelete, locations }: { item: Item, onContainerClick: (itemId: string) => void, parentContainer?: Item | null, onItemSave: (item: Item) => void, onItemDelete: (itemId: string) => void, locations: Location[] }) {
+export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, onItemDelete, locations, allItems }: { item: Item, onContainerClick: (itemId: string) => void, parentContainer?: Item | null, onItemSave: (item: Item) => void, onItemDelete: (itemId: string) => void, locations: Location[], allItems: Item[] }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
@@ -78,6 +78,7 @@ export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, 
         isReadOnly={true}
         onItemSave={onItemSave}
         locations={locations}
+        allItems={allItems}
       />
       
       {/* Edit Dialog */}
@@ -89,6 +90,7 @@ export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, 
         isReadOnly={false}
         onItemSave={onItemSave}
         locations={locations}
+        allItems={allItems}
       />
 
       <Card 

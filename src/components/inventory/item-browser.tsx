@@ -107,7 +107,7 @@ export function ItemBrowser({
         {icon}
         <h3 className="text-lg font-semibold">{title}</h3>
       </div>
-      <ItemList items={items} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={onItemSave} onItemDelete={onItemDelete} locations={allLocations} />
+      <ItemList items={items} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={onItemSave} onItemDelete={onItemDelete} locations={allLocations} allItems={allItems} />
     </div>
   );
   
@@ -148,7 +148,7 @@ export function ItemBrowser({
           </Breadcrumb>
         </div>
 
-        <AddItemDialog parentContainer={currentContainer} locations={allLocations} onItemSave={onItemSave}>
+        <AddItemDialog parentContainer={currentContainer} locations={allLocations} onItemSave={onItemSave} allItems={allItems}>
           <Button>
             <PlusCircle className="mr-2 h-4 w-4" />
             Adicionar Item
@@ -181,7 +181,7 @@ export function ItemBrowser({
               <>
                 <Separator className="my-8" />
                 <h3 className="text-lg font-semibold mb-4">Itens Soltos</h3>
-                <ItemList items={looseItems} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={onItemSave} onItemDelete={onItemDelete} locations={allLocations} />
+                <ItemList items={looseItems} onContainerClick={handleContainerClick} parentContainer={currentContainer} onItemSave={onItemSave} onItemDelete={onItemDelete} locations={allLocations} allItems={allItems} />
               </>
             )}
             {
@@ -191,7 +191,7 @@ export function ItemBrowser({
                 <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 text-center p-12 min-h-[400px]">
                     <h3 className="text-xl font-semibold">Container Vazio</h3>
                     <p className="text-muted-foreground mt-2 mb-4">Adicione itens a este container.</p>
-                    <AddItemDialog parentContainer={currentContainer} locations={allLocations} onItemSave={onItemSave}>
+                    <AddItemDialog parentContainer={currentContainer} locations={allLocations} onItemSave={onItemSave} allItems={allItems}>
                       <Button>
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Adicionar Item
@@ -203,7 +203,7 @@ export function ItemBrowser({
           </>
         ) : (
           // Root view
-          <ItemList items={visibleItems} onContainerClick={handleContainerClick} onItemSave={onItemSave} onItemDelete={onItemDelete} locations={allLocations} />
+          <ItemList items={visibleItems} onContainerClick={handleContainerClick} onItemSave={onItemSave} onItemDelete={onItemDelete} locations={allLocations} allItems={allItems} />
         )}
       </div>
     </div>
