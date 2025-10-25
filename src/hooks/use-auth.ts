@@ -11,12 +11,17 @@ export function useAuth() {
 
   // 1. Função para iniciar o login por redirecionamento
   const login = useCallback(async () => {
-    if (!auth) return;
+    if (!auth) {
+      console.error('Firebase Auth instance is null. Cannot proceed with login.');
+      setIsLoggingIn(false);
+      return;
+    }
     
     setIsLoggingIn(true);
     try {
       const provider = new GoogleAuthProvider();
       // Inicia o processo de redirecionamento. O código para aqui.
+      console.log('Attempting to sign in with redirect...');
       await signInWithRedirect(auth, provider);
     } catch (error) {
       console.error('Error during sign-in redirect:', error);
