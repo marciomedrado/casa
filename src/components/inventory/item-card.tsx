@@ -104,17 +104,6 @@ export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, 
         )}
       >
         <CardHeader className="flex flex-row items-start justify-start gap-4 p-4">
-             <div className="flex-1 min-w-0">
-                 {item.isContainer && (
-                  <div 
-                    onClick={(e) => { e.stopPropagation(); onContainerClick(item.id); }}
-                    className="flex items-center gap-1.5 rounded-full bg-black/50 px-2 py-1 text-xs text-white cursor-pointer w-fit mb-2"
-                  >
-                    <PackageOpen className="h-3 w-3" />
-                    <span>Container</span>
-                  </div>
-                )}
-             </div>
              <div className="flex gap-2">
                  {!item.isContainer && (
                      <Button
@@ -171,6 +160,17 @@ export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, 
                       </AlertDialogContent>
                   </AlertDialog>
             </div>
+             <div className="flex-1 min-w-0">
+                 {item.isContainer && (
+                  <div 
+                    onClick={(e) => { e.stopPropagation(); onContainerClick(item.id); }}
+                    className="flex items-center gap-1.5 rounded-full bg-black/50 px-2 py-1 text-xs text-white cursor-pointer w-fit mb-2"
+                  >
+                    <PackageOpen className="h-3 w-3" />
+                    <span>Container</span>
+                  </div>
+                )}
+             </div>
         </CardHeader>
         <CardContent className="p-4 pt-0 flex-1">
           <CardTitle className="text-lg line-clamp-1 mb-2">{item.name}</CardTitle>
