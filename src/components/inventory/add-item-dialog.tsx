@@ -284,6 +284,7 @@ export function AddItemDialog({
                     description: `Sugerimos um nome para o seu item.`,
                 });
             }
+            setImageDataUri(null);
         } catch (error) {
             console.error("Error identifying item:", error);
             toast({
@@ -685,4 +686,5 @@ export function AddItemDialog({
   );
 }
 
+    
     
