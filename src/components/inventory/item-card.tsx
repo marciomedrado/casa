@@ -114,7 +114,6 @@ export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, 
                     <span>Container</span>
                   </div>
                 )}
-                <CardTitle className="text-lg line-clamp-1">{item.name}</CardTitle>
              </div>
              <div className="flex gap-2">
                  {!item.isContainer && (
@@ -174,6 +173,7 @@ export function ItemCard({ item, onContainerClick, parentContainer, onItemSave, 
             </div>
         </CardHeader>
         <CardContent className="p-4 pt-0 flex-1">
+          <CardTitle className="text-lg line-clamp-1 mb-2">{item.name}</CardTitle>
           <div className="flex items-center text-sm text-muted-foreground mb-1">
               <MapPin className="h-4 w-4 mr-2 shrink-0" />
               <span className="truncate">{locationDisplayPath()}</span>
