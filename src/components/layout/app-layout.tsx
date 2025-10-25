@@ -69,7 +69,7 @@ export function AppLayout({
             </SidebarMenu>
           </SidebarGroup>
           <SidebarGroup>
-            <SidebarGroupLabel>Locais</SidebarGroupLabel>
+            <SidebarGroupLabel>Cômodos</SidebarGroupLabel>
              <AddLocationDialog locations={allRawLocations} propertyId={propertyId} onLocationSave={onLocationSave}>
                 <SidebarGroupAction>
                     <PlusCircle />
